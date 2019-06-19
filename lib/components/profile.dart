@@ -22,12 +22,13 @@ class _Profile extends State<Profile> {
       appBar: new AppBar(
         leading: new IconButton(
           onPressed: () {},
-          icon: new Icon(Icons.arrow_back_ios),
+          icon: new Icon(Icons.arrow_back_ios, color: Colors.black),
         ),
         title: new Text(
           "Profile",
           style: new TextStyle(
             fontWeight: FontWeight.bold,
+            color: Colors.black
           ),
         ),
         centerTitle: true,
