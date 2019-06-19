@@ -119,12 +119,20 @@ class _LoginPageState extends State<LoginPage> {
                 onSaved: (String value) => this._username = value),
             new TextFormField(
               decoration: new InputDecoration(labelText: "Password"),
-              validator: (value) =>
-                  value.length <= 4 ? "Password too short" : null,
+              validator: (value) => value.length <= 4
+                  ? "Password too short"
+                  : null,
               autovalidate: true,
               obscureText: true,
               onSaved: (String value) =>
                   this._password = sha256.convert(utf8.encode(value)).toString(),
+            ),
+            new FlatButton(
+              child: new Text("Forgot password?"),
+              onPressed: () {},
+            ),
+            new Padding(
+              padding: new EdgeInsets.only(top: 20.0),
             ),
             new RaisedButton(
               color: new Color(0xff75bbfd),

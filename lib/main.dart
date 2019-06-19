@@ -3,7 +3,7 @@ import 'package:geosquad/components/websocket_client.dart';
 import 'package:geosquad/components/login_page.dart';
 import 'package:geosquad/components/register_page.dart';
 import 'package:geosquad/components/map_page.dart';
-import 'package:geosquad/components/profile_page.dart';
+import 'package:geosquad/components/profile.dart';
 import 'package:geosquad/components/auth_page.dart';
 
 void main() => runApp(App());
@@ -34,7 +34,7 @@ class App extends StatelessWidget {
           '/auth': (context) => new LoginPage(),
           '/register': (context) => new RegisterPage(),
           '/map': (context) => new MapPage(),
-          '/profile': (context) => new ProfilePage()
+          '/profile': (context) => new Profile()
         });
   }
 }
@@ -43,6 +43,6 @@ class MainPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-        body: new Authentication());
+        body: new Profile());
   }
 }
