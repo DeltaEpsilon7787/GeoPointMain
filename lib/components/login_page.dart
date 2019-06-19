@@ -125,7 +125,7 @@ class _LoginPageState extends State<LoginPage> {
               autovalidate: true,
               obscureText: true,
               onSaved: (String value) =>
-                  _password = sha256.convert(utf8.encode(value)).toString(),
+                  this._password = sha256.convert(utf8.encode(value)).toString(),
             ),
             new FlatButton(
               child: new Text("Forgot password?"),
