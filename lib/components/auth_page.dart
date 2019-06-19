@@ -20,7 +20,7 @@ class _AuthenticationState extends State<Authentication> with SingleTickerProvid
   @override
   Widget build(BuildContext context){
     return new Scaffold(
-      resizeToAvoidBottomPadding: false,
+
       appBar: new AppBar(
         leading: new IconButton(
           icon: new Icon(Icons.arrow_back_ios),

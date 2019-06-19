@@ -105,50 +105,52 @@ class _LoginPageState extends State<LoginPage> {
 
     return new Container(
       padding: new EdgeInsets.all(20.0),
-      child: new Form(
-        key: formKey,
-        child: new Column(
-          children: <Widget>[
-            new TextFormField(
-                decoration: new InputDecoration(labelText: "Login"),
-                validator: (value) => value.length < 4 || value.length > 20
-                    ? "Login is incorrect"
+      child: SingleChildScrollView(
+        child: new Form(
+          key: formKey,
+          child: new Column(
+            children: <Widget>[
+              new TextFormField(
+                  decoration: new InputDecoration(labelText: "Login"),
+                  validator: (value) => value.length < 4 || value.length > 20
+                      ? "Login is incorrect"
+                      : null,
+                  initialValue: this._username ?? "",
+                  autovalidate: true,
+                  onSaved: (String value) => this._username = value),
+              new TextFormField(
+                decoration: new InputDecoration(labelText: "Password"),
+                validator: (value) => value.length <= 4
+                    ? "Password too short"
                     : null,
-                initialValue: this._username ?? "",
                 autovalidate: true,
-                onSaved: (String value) => this._username = value),
-            new TextFormField(
-              decoration: new InputDecoration(labelText: "Password"),
-              validator: (value) => value.length <= 4
-                  ? "Password too short"
-                  : null,
-              autovalidate: true,
-              obscureText: true,
-              onSaved: (String value) =>
-                  this._password = sha256.convert(utf8.encode(value)).toString(),
-            ),
-            new FlatButton(
-              child: new Text("Forgot password?"),
-              onPressed: () {},
-            ),
-            new Padding(
-              padding: new EdgeInsets.only(top: 20.0),
-            ),
-            new RaisedButton(
-              color: new Color(0xff75bbfd),
-              child: new Text(
-                "Sign in",
+                obscureText: true,
+                onSaved: (String value) =>
+                    this._password = sha256.convert(utf8.encode(value)).toString(),
               ),
-              onPressed: () {
-                if (this.formKey.currentState.validate()) {
-                  this.formKey.currentState.save();
-                  this.storePersistent('username', this._username);
-                  this.storePersistent('password', this._password);
-                  this.tryToLogin(this._username, this._password);
-                }
-              },
-            ),
-          ],
+              new FlatButton(
+                child: new Text("Forgot password?"),
+                onPressed: () {},
+              ),
+              new Padding(
+                padding: new EdgeInsets.only(top: 5.0),
+              ),
+              new RaisedButton(
+                color: new Color(0xff75bbfd),
+                child: new Text(
+                  "Sign in",
+                ),
+                onPressed: () {
+                  if (this.formKey.currentState.validate()) {
+                    this.formKey.currentState.save();
+                    this.storePersistent('username', this._username);
+                    this.storePersistent('password', this._password);
+                    this.tryToLogin(this._username, this._password);
+                  }
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
