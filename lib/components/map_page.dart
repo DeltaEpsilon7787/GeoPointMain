@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
     as bg;
-/*import 'package:geolocator/geolocator.dart';*/
+
 import 'package:flutter_map/flutter_map.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -9,6 +9,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 
 import '../main.dart';
+import 'package:geolocator/geolocator.dart';
 
 const String MAP_TOKEN =
     'pk.eyJ1IjoiY2hyaXN0b2NyYWN5IiwiYSI6ImVmM2Y2MDA1NzIyMjg1NTdhZGFlYmZiY2QyODVjNzI2In0.htaacx3ZhE5uAWN86-YNAQ';
@@ -17,9 +18,8 @@ class MapPage extends StatefulWidget {
   @override
   _MapPageState createState() => _MapPageState();
 }
-/*
+
 class _MapPageStateNew extends State<MapPage>
-    with AutomaticKeepAliveClientMixin<MapPage> {
   List<CircleMarker> _myPositions = [];
   Map<String, List<CircleMarker>> _friendPositions = {};
 
@@ -69,7 +69,7 @@ class _MapPageStateNew extends State<MapPage>
     return null;
   }
 }
-*/
+
 class _MapPageState extends State<MapPage>
     with AutomaticKeepAliveClientMixin<MapPage> {
   @override

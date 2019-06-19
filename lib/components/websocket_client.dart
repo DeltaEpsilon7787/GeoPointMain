@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/status.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 
 class WebsocketClient {
   IOWebSocketChannel channel;
