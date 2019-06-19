@@ -20,7 +20,6 @@ class _AuthenticationState extends State<Authentication> with SingleTickerProvid
   @override
   Widget build(BuildContext context){
     return new Scaffold(
-
       appBar: new AppBar(
         leading: new IconButton(
           icon: new Icon(Icons.arrow_back_ios),
@@ -29,6 +28,7 @@ class _AuthenticationState extends State<Authentication> with SingleTickerProvid
         title: new Text("Sign in/Sign up"),
         elevation: 0.7,
         bottom: new TabBar(
+
           controller: this._tabController,
           indicatorColor: Colors.white,
           tabs: <Widget>[

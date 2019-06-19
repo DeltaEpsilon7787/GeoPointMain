@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import '../main.dart';
@@ -21,7 +20,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void initState() {
     super.initState();
-    //huy huy huy huy
   }
 
   void tryToRegister(String username, String password, String email) {
@@ -31,10 +29,35 @@ class _RegisterPageState extends State<RegisterPage> {
     App.socketClient.attemptRegister(username, password, email);
   }
 
+  void tryToConfirm(String key) {
+
+  }
+
   @override
   Widget build(BuildContext context) {
     if (this._waitingForResponse) {
-      return new Center(child: CircularProgressIndicator());
+      return new Container(
+        padding: new EdgeInsets.all(20.0),
+        child: new SingleChildScrollView(
+          child: new Column(
+            children: <Widget>[
+              new TextFormField(
+                decoration: new InputDecoration(labelText: "Enter a key"),
+              ),
+              new Padding(padding: EdgeInsets.all(5.0)),
+              new RaisedButton(
+                color: new Color(0xff75bbfd),
+                child: new Text(
+                  "Confirm",
+                ),
+                onPressed: () {
+
+                },
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Container(
