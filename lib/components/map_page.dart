@@ -19,7 +19,7 @@ class MapPage extends StatefulWidget {
   _MapPageState createState() => _MapPageState();
 }
 
-class _MapPageStateNew extends State<MapPage>
+class _MapPageStateNew extends State<MapPage> {
   List<CircleMarker> _myPositions = [];
   Map<String, List<CircleMarker>> _friendPositions = {};
 
@@ -53,14 +53,22 @@ class _MapPageStateNew extends State<MapPage>
     this._mapOptions.crs.scale(_mapController.zoom);
   }
 
-  static CircleMarker transformPosition(Position position, {String username}) {
+  static CircleMarker transformPosition(Position position, {String username, @required double time}) {
     List<int> digest = username == null
         ? [173, 0, 255]
         : sha256.convert(utf8.encode(username)).bytes.getRange(0, 2).toList();
 
-    return CircleMarker(
-      color: Color.fromRGBO(digest[0], digest[1], digest[2], 1.0)
-    );
+    double lerp = 5 * (App.socketClient.serverTime - time) / (60*5);
+    if (lerp < 5) {
+      return CircleMarker(
+        color: Color.fromRGBO(digest[0], digest[1], digest[2], 1.0),
+        point: LatLng(position.latitude, position.longitude),
+        radius: 5 - lerp
+      );
+    }
+    else {
+      return null;
+    }
   }
 
   @override
@@ -108,7 +116,7 @@ class _MapPageState extends State<MapPage>
     bg.BackgroundGeolocation.onMotionChange(_onMotionChange);
     bg.BackgroundGeolocation.onHeartbeat((bg.HeartbeatEvent hb) {
       App.socketClient.geopointGet();
-      App.socketClient.pingServer();
+      App.socketClient.getStats();
     });
 
     App.socketClient.addListener('geopoint_get', populateMyself);
