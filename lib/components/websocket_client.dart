@@ -46,13 +46,13 @@ class WebsocketClient {
     this.sessionId = sessionId;
   }
 
-  void geopointPost(bg.Location location) {
+  void geopointPost(double lat, double lon) {
     channel.sink.add(jsonEncode({
       'action': 'geopoint_post',
       'username': this.username,
       'session_id': this.sessionId,
-      'lat': location.coords.latitude,
-      'lon': location.coords.longitude
+      'lat': lat,
+      'lon': lon
     }));
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
     as bg;
+/*import 'package:geolocator/geolocator.dart';*/
 import 'package:flutter_map/flutter_map.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -16,7 +17,59 @@ class MapPage extends StatefulWidget {
   @override
   _MapPageState createState() => _MapPageState();
 }
+/*
+class _MapPageStateNew extends State<MapPage>
+    with AutomaticKeepAliveClientMixin<MapPage> {
+  List<CircleMarker> _myPositions = [];
+  Map<String, List<CircleMarker>> _friendPositions = {};
 
+  MapController _mapController;
+  MapOptions _mapOptions;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  void initState() {
+    super.initState();
+
+    this._mapController = new MapController();
+    this._mapOptions = new MapOptions(
+      onPositionChanged: this._onPositionChanged,
+      center: LatLng(51.5, -0.09),
+      zoom: 16.0,
+    );
+
+    Geolocator()
+        .getPositionStream(LocationOptions(
+            accuracy: LocationAccuracy.high, distanceFilter: 10))
+        .listen(this._registerPosition);
+  }
+
+  void _registerPosition(Position position) {
+    App.socketClient.geopointPost(position.latitude, position.longitude);
+  }
+
+  void _onPositionChanged(MapPosition pos, bool hasGesture, bool isGesture) {
+    this._mapOptions.crs.scale(_mapController.zoom);
+  }
+
+  static CircleMarker transformPosition(Position position, {String username}) {
+    List<int> digest = username == null
+        ? [173, 0, 255]
+        : sha256.convert(utf8.encode(username)).bytes.getRange(0, 2).toList();
+
+    return CircleMarker(
+      color: Color.fromRGBO(digest[0], digest[1], digest[2], 1.0)
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return null;
+  }
+}
+*/
 class _MapPageState extends State<MapPage>
     with AutomaticKeepAliveClientMixin<MapPage> {
   @override
@@ -49,7 +102,9 @@ class _MapPageState extends State<MapPage>
     _mapController = new MapController();
 
     bg.BackgroundGeolocation.onLocation(_onLocation);
-    bg.BackgroundGeolocation.onLocation(App.socketClient.geopointPost);
+    bg.BackgroundGeolocation.onLocation((bg.Location loc) {
+      App.socketClient.geopointPost(loc.coords.latitude, loc.coords.longitude);
+    });
     bg.BackgroundGeolocation.onMotionChange(_onMotionChange);
     bg.BackgroundGeolocation.onHeartbeat((bg.HeartbeatEvent hb) {
       App.socketClient.geopointGet();

@@ -28,7 +28,7 @@ dependencies:
   shared_preferences: ^0.5.3
   flutter_background_geolocation: '^1.0.9'
   flutter_map: '^0.5.0'
-  geolocator: '^5.0.1'
+#  geolocator: '^5.0.0'
 
 dev_dependencies:
   flutter_test:
