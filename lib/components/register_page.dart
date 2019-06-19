@@ -21,11 +21,22 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void initState() {
     super.initState();
+    //huy huy huy huy
+  }
 
+  void tryToRegister(String username, String password, String email) {
+    setState(() {
+      this._waitingForResponse = true;
+    });
+    App.socketClient.attemptRegister(username, password, email);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (this._waitingForResponse) {
+      return new Center(child: CircularProgressIndicator());
+    }
+
     return Container(
       padding: new EdgeInsets.all(20.0),
       child: new SingleChildScrollView(
@@ -69,7 +80,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: new Text(
                   "Registrate",
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  if (this.formKey.currentState.validate()) {
+                    this.formKey.currentState.save();
+                    this.tryToRegister(this._username, this._password, this._email);
+                  }
+                },
               ),
             ],
           ),
