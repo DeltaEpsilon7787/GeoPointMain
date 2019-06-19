@@ -128,16 +128,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
             new RaisedButton(
               color: new Color(0xff75bbfd),
-              child: new Text("Register"),
-              onPressed: () {
-                Navigator.of(context).pushNamed('/auth');
-              },
-            ),
-            new Padding(
-              padding: new EdgeInsets.only(top: 20.0),
-            ),
-            new RaisedButton(
-              color: new Color(0xff75bbfd),
               child: new Text(
                 "Sign in",
               ),
