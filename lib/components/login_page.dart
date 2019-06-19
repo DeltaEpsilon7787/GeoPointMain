@@ -124,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
               autovalidate: true,
               obscureText: true,
               onSaved: (String value) =>
-                  _password = sha256.convert(utf8.encode(value)).toString(),
+                  this._password = sha256.convert(utf8.encode(value)).toString(),
             ),
             new RaisedButton(
               color: new Color(0xff75bbfd),

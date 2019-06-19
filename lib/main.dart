@@ -31,8 +31,8 @@ class App extends StatelessWidget {
         initialRoute: '/',
         routes: {
           '/': (context) => new MainPage(),
-          '/login': (context) => new LoginPage(),
-          '/auth': (context) => new RegisterPage(),
+          '/auth': (context) => new LoginPage(),
+          '/register': (context) => new RegisterPage(),
           '/map': (context) => new MapPage(),
           '/profile': (context) => new ProfilePage()
         });
