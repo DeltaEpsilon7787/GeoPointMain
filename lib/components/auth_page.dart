@@ -29,7 +29,7 @@ class _AuthenticationState extends State<Authentication> with SingleTickerProvid
         title: new Text("Sign in/Sign up"),
         elevation: 0.7,
         bottom: new TabBar(
-          controller: _tabController,
+          controller: this._tabController,
           indicatorColor: Colors.white,
           tabs: <Widget>[
             new Tab(
@@ -40,7 +40,7 @@ class _AuthenticationState extends State<Authentication> with SingleTickerProvid
         ),
       ),
       body: new TabBarView(
-        controller: _tabController,
+        controller: this._tabController,
         children: <Widget>[
           new LoginPage(),
           new RegisterPage(),

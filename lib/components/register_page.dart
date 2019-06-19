@@ -41,6 +41,7 @@ class _RegisterPageState extends State<RegisterPage> {
       padding: new EdgeInsets.all(20.0),
       child: new SingleChildScrollView(
         child: new Form(
+          key: this.formKey,
           child: new Column(
             children: <Widget>[
               new TextFormField(
