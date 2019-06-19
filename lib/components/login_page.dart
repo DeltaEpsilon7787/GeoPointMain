@@ -27,7 +27,7 @@ class _LoginPageState extends State<LoginPage> {
     this._waitingForResponse = true;
     this.injectPersistent().whenComplete(() {
       setState(() {
-        _waitingForResponse = false;
+        this._waitingForResponse = false;
       });
     });
   }
@@ -57,7 +57,7 @@ class _LoginPageState extends State<LoginPage> {
         this.storePersistent('password', null);
         setState(() {
           this._automaticLogin = false;
-          _password = null;
+          this._password = null;
         });
       }
       Scaffold.of(context).showSnackBar(new SnackBar(content: Text(reason)));
@@ -92,11 +92,11 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_automaticLogin || _waitingForResponse) {
+    if (this._automaticLogin || this._waitingForResponse) {
       return new Center(child: CircularProgressIndicator());
     }
 
-    if (_password != null) {
+    if (this._password != null) {
       setState(() {
         this._automaticLogin = true;
       });
@@ -114,9 +114,9 @@ class _LoginPageState extends State<LoginPage> {
                 validator: (value) => value.length < 4 || value.length > 20
                     ? "Login is incorrect"
                     : null,
-                initialValue: _username ?? "",
+                initialValue: this._username ?? "",
                 autovalidate: true,
-                onSaved: (String value) => _username = value),
+                onSaved: (String value) => this._username = value),
             new TextFormField(
               decoration: new InputDecoration(labelText: "Password"),
               validator: (value) =>

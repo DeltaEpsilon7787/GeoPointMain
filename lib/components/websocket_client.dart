@@ -72,6 +72,15 @@ class WebsocketClient {
     }));
   }
 
+  void attemptRegister(String username, String password, String email) {
+    channel.sink.add(jsonEncode({
+      'action': 'register',
+      'username': username,
+      'password': password,
+      'email': email
+    }));
+  }
+
   void attemptLogin(String username, String password) {
     this.username = username;
     channel.sink.add(jsonEncode(
