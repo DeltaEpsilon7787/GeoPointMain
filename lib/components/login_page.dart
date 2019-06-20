@@ -23,53 +23,19 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     this._waitingForResponse = true;
-  }
-
-  void loginResponse(String status, String reason, dynamic data) {
-    setState(() {
-      this._waitingForResponse = false;
-    });
-
-    if (status == 'success') {
-      App.socketClient.setSessionId(data['session_id']);
-      this.storePersistent('username', this._username);
-      this.storePersistent('password', this._password);
-    } else {
-      if (this._automaticLogin) {
-        this.storePersistent('password', null);
-        setState(() {
-          this._automaticLogin = false;
-          this._password = null;
+    App.socketClient.sessionAcquiredStream.stream
+        .listen((bool status) {
+          if (status) {
+            Navigator.of(this.context).pushReplacementNamed('/map');
+          }
+          setState(() {
+            this._waitingForResponse = !status;
+          });
+        })
+        .asFuture()
+        .timeout(Duration(seconds: 5), onTimeout: () {
+          this._waitingForResponse = false;
         });
-      }
-      Scaffold.of(context).showSnackBar(new SnackBar(content: Text(reason)));
-    }
-
-    if (status == 'success') {
-      Navigator.of(context).pushNamed('/map').then((_) {
-        if (!this._automaticLogin) {
-          Scaffold.of(context)
-              .showSnackBar(new SnackBar(content: Text(reason)));
-        }
-      });
-    }
-  }
-
-  void tryToLogin(String username, String password) {
-    setState(() {
-      this._waitingForResponse = true;
-    });
-    App.socketClient.attemptLogin(username, password);
-  }
-
-  Future injectPersistent() async {
-    await this.getPersistent('username').then((value) {
-      this._username = value;
-    }).whenComplete(() {
-      this.getPersistent('password').then((value) {
-        this._password = value;
-      });
-    });
   }
 
   @override
