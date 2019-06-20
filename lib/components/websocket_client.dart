@@ -67,6 +67,7 @@ class WebsocketClient {
     this._password = password;
     this._persistentSave();
   }
+
   String get sessionId => this._sessionId;
 
   set sessionId(String sessionId) {
@@ -94,6 +95,9 @@ class WebsocketClient {
 
   Future<ServerResponse> geopointGet() async =>
       this._sendMessage('geopoint_get');
+
+  Future<ServerResponse> geopointGetFriends() async =>
+      this._sendMessage('geopoint_get_friends');
 
   Future<ServerResponse> geopointPost(double lat, double lon) async =>
       this._sendMessage('geopoint_post', data: {'lat': lat, 'lon': lon});
