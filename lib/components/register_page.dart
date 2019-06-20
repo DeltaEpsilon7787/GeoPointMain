@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
+import 'websocket_client.dart';
 import '../main.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -17,6 +18,7 @@ class _RegisterPageState extends State<RegisterPage> {
   String _username;
   String _email;
   String _password;
+  String _key;
 
   void initState() {
     super.initState();
@@ -107,7 +109,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () {
                   if (this.formKey.currentState.validate()) {
                     this.formKey.currentState.save();
-                    this.tryToRegister(this._username, this._password, this._email);
+                    App.socketClient.attemptRegister(this._username, this._password, this._email).then(
+                        (ServerResponse response) {},
+                        onError: (ServerResponse response) {print(response.code);},
+                    );
                   }
                 },
               ),

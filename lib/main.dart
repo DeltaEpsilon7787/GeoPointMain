@@ -34,7 +34,7 @@ class App extends StatelessWidget {
           '/': (context) => new MainPage(),
           '/auth': (context) => new LoginPage(),
           '/register': (context) => new RegisterPage(),
-          '/map': (context) => new MapPage(),
+          //'/map': (context) => new MapPage(),
           '/profile': (context) => new Profile()
         });
   }

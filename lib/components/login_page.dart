@@ -25,52 +25,52 @@ class _LoginPageState extends State<LoginPage> {
     this._waitingForResponse = true;
   }
 
-  void loginResponse(String status, String reason, dynamic data) {
-    setState(() {
-      this._waitingForResponse = false;
-    });
+//  void loginResponse(String status, String reason, dynamic data) {
+//    setState(() {
+//      this._waitingForResponse = false;
+//    });
+//
+//    if (status == 'success') {
+//      App.socketClient.setSessionId(data['session_id']);
+//      this.storePersistent('username', this._username);
+//      this.storePersistent('password', this._password);
+//    } else {
+//      if (this._automaticLogin) {
+//        this.storePersistent('password', null);
+//        setState(() {
+//          this._automaticLogin = false;
+//          this._password = null;
+//        });
+//      }
+//      Scaffold.of(context).showSnackBar(new SnackBar(content: Text(reason)));
+//    }
+//
+//    if (status == 'success') {
+//      Navigator.of(context).pushNamed('/map').then((_) {
+//        if (!this._automaticLogin) {
+//          Scaffold.of(context)
+//              .showSnackBar(new SnackBar(content: Text(reason)));
+//        }
+//      });
+//    }
+//  }
 
-    if (status == 'success') {
-      App.socketClient.setSessionId(data['session_id']);
-      this.storePersistent('username', this._username);
-      this.storePersistent('password', this._password);
-    } else {
-      if (this._automaticLogin) {
-        this.storePersistent('password', null);
-        setState(() {
-          this._automaticLogin = false;
-          this._password = null;
-        });
-      }
-      Scaffold.of(context).showSnackBar(new SnackBar(content: Text(reason)));
-    }
+//  void tryToLogin(String username, String password) {
+//    setState(() {
+//      this._waitingForResponse = true;
+//    });
+//    App.socketClient.attemptLogin(username, password);
+//  }
 
-    if (status == 'success') {
-      Navigator.of(context).pushNamed('/map').then((_) {
-        if (!this._automaticLogin) {
-          Scaffold.of(context)
-              .showSnackBar(new SnackBar(content: Text(reason)));
-        }
-      });
-    }
-  }
-
-  void tryToLogin(String username, String password) {
-    setState(() {
-      this._waitingForResponse = true;
-    });
-    App.socketClient.attemptLogin(username, password);
-  }
-
-  Future injectPersistent() async {
-    await this.getPersistent('username').then((value) {
-      this._username = value;
-    }).whenComplete(() {
-      this.getPersistent('password').then((value) {
-        this._password = value;
-      });
-    });
-  }
+//  Future injectPersistent() async {
+//    await this.getPersistent('username').then((value) {
+//      this._username = value;
+//    }).whenComplete(() {
+//      this.getPersistent('password').then((value) {
+//        this._password = value;
+//      });
+//    });
+//  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,11 +95,11 @@ class _LoginPageState extends State<LoginPage> {
             new TextFormField(
               decoration: new InputDecoration(labelText: "Password"),
               validator: (value) =>
-                  value.length <= 4 ? "Password too short" : null,
+              value.length <= 4 ? "Password too short" : null,
               autovalidate: true,
               obscureText: true,
               onSaved: (String value) =>
-                  _password = sha256.convert(utf8.encode(value)).toString(),
+              _password = sha256.convert(utf8.encode(value)).toString(),
             ),
             new RaisedButton(
               color: new Color(0xff75bbfd),
@@ -125,9 +125,9 @@ class _LoginPageState extends State<LoginPage> {
                     this._waitingForResponse = true;
                   });
                   App.socketClient.attemptLogin().then(
-                      (ServerResponse response) {
-                    App.socketClient.sessionId = response.data;
-                  }, onError: (ServerResponse response) {
+                          (ServerResponse response) {
+                        App.socketClient.sessionId = response.data;
+                      }, onError: (ServerResponse response) {
                     Scaffold.of(context).showSnackBar(new SnackBar(
                         content: Text('Invalid login or password')));
                   }).whenComplete(() {
