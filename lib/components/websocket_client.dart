@@ -84,10 +84,13 @@ class WebsocketClient {
   Future<ServerResponse> attemptLogin() async => this._sendMessage('auth',
       data: {'username': this._username, 'password': this._password});
 
-  Future attemptRegister(
+  Future<ServerResponse> attemptRegister(
           String username, String password, String email) async =>
       this._sendMessage('register',
           data: {'username': username, 'password': password, 'email': email});
+
+  Future<ServerResponse> attemptActivation(String key) =>
+      this._sendMessage('activate', data: {'key': key});
 
   Future<ServerResponse> geopointGet() async =>
       this._sendMessage('geopoint_get');
