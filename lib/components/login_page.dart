@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
 import '../main.dart';
+import 'websocket_client.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -13,7 +13,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  bool _automaticLogin = false;
   bool _waitingForResponse = false;
 
   final formKey = new GlobalKey<FormState>();
@@ -23,24 +22,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void initState() {
     super.initState();
-    App.socketClient.addListener('auth', this.loginResponse);
     this._waitingForResponse = true;
-    this.injectPersistent().whenComplete(() {
-      setState(() {
-        this._waitingForResponse = false;
-      });
-    });
-  }
-
-  void storePersistent(String key, String value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    prefs.setString(key, value);
-  }
-
-  Future<String> getPersistent(String key) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(key);
   }
 
   void loginResponse(String status, String reason, dynamic data) {
@@ -92,65 +74,69 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (this._automaticLogin || this._waitingForResponse) {
+    if (this._waitingForResponse) {
       return new Center(child: CircularProgressIndicator());
-    }
-
-    if (this._password != null) {
-      setState(() {
-        this._automaticLogin = true;
-      });
-      this.tryToLogin(_username, _password);
     }
 
     return new Container(
       padding: new EdgeInsets.all(20.0),
-      child: SingleChildScrollView(
-        child: new Form(
-          key: formKey,
-          child: new Column(
-            children: <Widget>[
-              new TextFormField(
-                  decoration: new InputDecoration(labelText: "Login"),
-                  validator: (value) => value.length < 4 || value.length > 20
-                      ? "Login is incorrect"
-                      : null,
-                  initialValue: this._username ?? "",
-                  autovalidate: true,
-                  onSaved: (String value) => this._username = value),
-              new TextFormField(
-                decoration: new InputDecoration(labelText: "Password"),
-                validator: (value) => value.length <= 4
-                    ? "Password too short"
+      child: new Form(
+        key: formKey,
+        child: new Column(
+          children: <Widget>[
+            new TextFormField(
+                decoration: new InputDecoration(labelText: "Login"),
+                validator: (value) => value.length < 4 || value.length > 20
+                    ? "Login is incorrect"
                     : null,
+                initialValue: this._username ?? "",
                 autovalidate: true,
-                obscureText: true,
-                onSaved: (String value) =>
-                    this._password = sha256.convert(utf8.encode(value)).toString(),
+                onSaved: (String value) => this._username = value),
+            new TextFormField(
+              decoration: new InputDecoration(labelText: "Password"),
+              validator: (value) =>
+                  value.length <= 4 ? "Password too short" : null,
+              autovalidate: true,
+              obscureText: true,
+              onSaved: (String value) =>
+                  _password = sha256.convert(utf8.encode(value)).toString(),
+            ),
+            new RaisedButton(
+              color: new Color(0xff75bbfd),
+              child: new Text("Register"),
+              onPressed: () {
+                Navigator.of(context).pushNamed('/auth');
+              },
+            ),
+            new Padding(
+              padding: new EdgeInsets.only(top: 20.0),
+            ),
+            new RaisedButton(
+              color: new Color(0xff75bbfd),
+              child: new Text(
+                "Sign in",
               ),
-              new FlatButton(
-                child: new Text("Forgot password?"),
-                onPressed: () {},
-              ),
-              new Padding(
-                padding: new EdgeInsets.only(top: 5.0),
-              ),
-              new RaisedButton(
-                color: new Color(0xff75bbfd),
-                child: new Text(
-                  "Sign in",
-                ),
-                onPressed: () {
-                  if (this.formKey.currentState.validate()) {
-                    this.formKey.currentState.save();
-                    this.storePersistent('username', this._username);
-                    this.storePersistent('password', this._password);
-                    this.tryToLogin(this._username, this._password);
-                  }
-                },
-              ),
-            ],
-          ),
+              onPressed: () {
+                if (this.formKey.currentState.validate()) {
+                  this.formKey.currentState.save();
+                  App.socketClient.username = this._username;
+                  App.socketClient.password = this._password;
+                  setState(() {
+                    this._waitingForResponse = true;
+                  });
+                  App.socketClient.attemptLogin().then(
+                      (ServerResponse response) {
+                    App.socketClient.sessionId = response.data;
+                  }, onError: (ServerResponse response) {
+                    Scaffold.of(context).showSnackBar(new SnackBar(
+                        content: Text('Invalid login or password')));
+                  }).whenComplete(() {
+                    this._waitingForResponse = false;
+                  });
+                }
+              },
+            ),
+          ],
         ),
       ),
     );

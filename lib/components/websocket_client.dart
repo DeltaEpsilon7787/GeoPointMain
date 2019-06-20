@@ -1,89 +1,192 @@
+import 'dart:async';
 import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/status.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
+
+class ServerResponse {
+  String code;
+  dynamic data;
+
+  ServerResponse(this.code, this.data);
+}
 
 class WebsocketClient {
-  IOWebSocketChannel channel;
+  String _username;
 
-  String username;
-  String sessionId;
+  String _password;
 
-  Map<String, List> _callbacks = {};
+  String _sessionId;
+
+  final IOWebSocketChannel channel = IOWebSocketChannel.connect(
+      'ws://31.25.28.142:8010',
+      pingInterval: Duration(seconds: 5));
+
+  final StreamController<List<String>> friendRequestStream =
+      StreamController.broadcast();
+
+  final StreamController<bool> sessionAcquiredStream =
+      StreamController.broadcast();
+
+  Timer _timeUpdaterTimer;
+
+  Timer _friendPollerTimer;
+
+  double serverTime = 0;
+
+  int _id = 0;
+
+  bool acquiringSession = false;
 
   WebsocketClient() {
-    channel = IOWebSocketChannel.connect('ws://31.25.28.142:8010',
-        pingInterval: Duration(seconds: 5));
+    // Set up time poller
+    this._timeUpdaterTimer = Timer.periodic(Duration(seconds: 1), (_) {
+      this._sendMessage('get_time').then((ServerResponse response) {
+        this.serverTime = response.data;
+      }, onError: this._handleDefaultErrors);
+    });
 
-    channel.stream.listen((dynamic response) {
-      var responseObject = jsonDecode(response);
-      String action = responseObject['action'];
-      String status = responseObject['status'];
-      String reason = responseObject['reason'];
-
-      if (_callbacks.containsKey(action)) {
-        for (dynamic listener in _callbacks[action]) {
-          listener(status, reason, responseObject);
-        }
+    // Friend requests poller
+    this._friendPollerTimer = Timer.periodic(Duration(seconds: 10), (_) {
+      if (this.username != null && this._sessionId != null) {
+        this._sendMessage('get_my_friends').then((ServerResponse response) {
+          List<String> friends = List.castFrom(response.data);
+          if (friends.length > 0) {
+            this.friendRequestStream.sink.add(friends);
+          }
+        });
       }
+    });
 
+    this._persistentGet();
+    this._acquireNewSession();
+  }
+  String get password => this._password;
+  set password(String password) {
+    this._password = password;
+    this._persistentSave();
+  }
+
+  String get sessionId => this._sessionId;
+
+  set sessionId(String sessionId) {
+    this._sessionId = sessionId;
+    this.sessionAcquiredStream.add(sessionId != null);
+  }
+
+  String get username => this._username;
+
+  set username(String username) {
+    this._username = username;
+    this._persistentSave();
+  }
+
+  Future<ServerResponse> attemptLogin() async => this._sendMessage('auth',
+      data: {'username': this._username, 'password': this._password});
+
+  Future attemptRegister(
+          String username, String password, String email) async =>
+      this._sendMessage('register',
+          data: {'username': username, 'password': password, 'email': email});
+
+  Future<ServerResponse> geopointGet() async =>
+      this._sendMessage('geopoint_get');
+
+  Future<ServerResponse> geopointPost(double lat, double lon) async =>
+      this._sendMessage('geopoint_post', data: {'lat': lat, 'lon': lon});
+
+  void _acquireNewSession() {
+    if (this.acquiringSession) {
       return;
+    }
+
+    if (this._username == null || this._password == null) {
+      return;
+    }
+
+    if (this.sessionId == null) {
+      this.acquiringSession = true;
+      this._sendMessage('auth', data: {
+        'username': username,
+        'password': password
+      }).then((ServerResponse response) {
+        this.sessionId = response.data;
+      }).whenComplete(() {
+        this.acquiringSession = false;
+      });
+    }
+  }
+
+  void _handleDefaultErrors(ServerResponse response) {
+    switch (response.code) {
+      case 'SESSION_EXPIRED':
+        this._sessionId = null;
+        this._acquireNewSession();
+        break;
+      case 'USER_NOT_LOGGED':
+        if (this._sessionId != null) {
+          this._sessionId = null;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _persistentGet() {
+    SharedPreferences.getInstance().then((SharedPreferences prefs) {
+      this._username = prefs.getString('username');
+      this._password = prefs.getString('password');
     });
   }
 
-  bool isNotConnected() {
-    return channel.closeCode == goingAway;
+  void _persistentSave() {
+    SharedPreferences.getInstance().then((SharedPreferences prefs) {
+      prefs.setString("username", this.username);
+      prefs.setString("password", this.password);
+    });
   }
 
-  void addListener(String action, dynamic callback) {
-    if (!_callbacks.containsKey(action)) {
-      _callbacks[action] = [];
+  int _reserveId() => this._id++;
+
+  Future<ServerResponse> _sendMessage(String action,
+      {Map<String, dynamic> data}) async {
+    int reservedId = this._reserveId();
+
+    var actionInfo = {'action': action, 'id': reservedId};
+
+    var sessionInfo = {
+      'username': this._username,
+      'session_id': this._sessionId
+    };
+
+    var serverRequest = actionInfo;
+    if (this._username != null && this._sessionId != null) {
+      serverRequest.addAll(sessionInfo);
     }
-    _callbacks[action].add(callback);
-  }
+    if (data != null) {
+      serverRequest.addAll(data);
+    }
 
-  void setSessionId(String sessionId) {
-    this.sessionId = sessionId;
-  }
+    this.channel.sink.add(jsonEncode(serverRequest));
 
-  void geopointPost(bg.Location location) {
-    channel.sink.add(jsonEncode({
-      'action': 'geopoint_post',
-      'username': this.username,
-      'session_id': this.sessionId,
-      'lat': location.coords.latitude,
-      'lon': location.coords.longitude
-    }));
-  }
-
-  void geopointGet() {
-    channel.sink.add(jsonEncode({
-      'action': 'geopoint_get',
-      'username': this.username,
-      'session_id': this.sessionId
-    }));
-  }
-
-  void pingServer() {
-    channel.sink.add(jsonEncode({
-      'action': 'get_stat',
-      'username': this.username,
-      'session_id': this.sessionId,
-    }));
-  }
-
-  void attemptRegister(String username, String password, String email) {
-    channel.sink.add(jsonEncode({
-      'action': 'register',
-      'username': username,
-      'password': password,
-      'email': email
-    }));
-  }
-
-  void attemptLogin(String username, String password) {
-    this.username = username;
-    channel.sink.add(jsonEncode(
-        {'action': 'auth', 'username': username, 'password': password}));
+    return this
+        .channel
+        .stream
+        .where((dynamic stringData) {
+          dynamic data = jsonDecode(stringData);
+          return data['id'] == reservedId;
+        })
+        .first
+        .then((dynamic stringData) {
+          dynamic data = jsonDecode(stringData);
+          ServerResponse response = ServerResponse(data['code'], data['data']);
+          if (data['status'] == 'fail') {
+            return Future.error(response);
+          } else {
+            return Future.value(response);
+          }
+        })
+        .catchError(this._handleDefaultErrors);
   }
 }

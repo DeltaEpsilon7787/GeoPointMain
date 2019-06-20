@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
     as bg;
+
 import 'package:flutter_map/flutter_map.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 
 import '../main.dart';
+import 'package:geolocator/geolocator.dart';
 
 const String MAP_TOKEN =
     'pk.eyJ1IjoiY2hyaXN0b2NyYWN5IiwiYSI6ImVmM2Y2MDA1NzIyMjg1NTdhZGFlYmZiY2QyODVjNzI2In0.htaacx3ZhE5uAWN86-YNAQ';
@@ -15,6 +17,65 @@ const String MAP_TOKEN =
 class MapPage extends StatefulWidget {
   @override
   _MapPageState createState() => _MapPageState();
+}
+
+class _MapPageStateNew extends State<MapPage> {
+  List<CircleMarker> _myPositions = [];
+  Map<String, List<CircleMarker>> _friendPositions = {};
+
+  MapController _mapController;
+  MapOptions _mapOptions;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  void initState() {
+    super.initState();
+
+    this._mapController = new MapController();
+    this._mapOptions = new MapOptions(
+      onPositionChanged: this._onPositionChanged,
+      center: LatLng(51.5, -0.09),
+      zoom: 16.0,
+    );
+
+    Geolocator()
+        .getPositionStream(LocationOptions(
+            accuracy: LocationAccuracy.high, distanceFilter: 10))
+        .listen(this._registerPosition);
+  }
+
+  void _registerPosition(Position position) {
+    App.socketClient.geopointPost(position.latitude, position.longitude);
+  }
+
+  void _onPositionChanged(MapPosition pos, bool hasGesture, bool isGesture) {
+    this._mapOptions.crs.scale(_mapController.zoom);
+  }
+
+  static CircleMarker transformPosition(Position position, {String username, @required double time}) {
+    List<int> digest = username == null
+        ? [173, 0, 255]
+        : sha256.convert(utf8.encode(username)).bytes.getRange(0, 2).toList();
+
+    double lerp = 5 * (App.socketClient.serverTime - time) / (60*5);
+    if (lerp < 5) {
+      return CircleMarker(
+        color: Color.fromRGBO(digest[0], digest[1], digest[2], 1.0),
+        point: LatLng(position.latitude, position.longitude),
+        radius: 5 - lerp
+      );
+    }
+    else {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return null;
+  }
 }
 
 class _MapPageState extends State<MapPage>
@@ -49,11 +110,13 @@ class _MapPageState extends State<MapPage>
     _mapController = new MapController();
 
     bg.BackgroundGeolocation.onLocation(_onLocation);
-    bg.BackgroundGeolocation.onLocation(App.socketClient.geopointPost);
+    bg.BackgroundGeolocation.onLocation((bg.Location loc) {
+      App.socketClient.geopointPost(loc.coords.latitude, loc.coords.longitude);
+    });
     bg.BackgroundGeolocation.onMotionChange(_onMotionChange);
     bg.BackgroundGeolocation.onHeartbeat((bg.HeartbeatEvent hb) {
       App.socketClient.geopointGet();
-      App.socketClient.pingServer();
+      App.socketClient.getStats();
     });
 
     App.socketClient.addListener('geopoint_get', populateMyself);
