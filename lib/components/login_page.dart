@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
 import '../main.dart';
+import 'websocket_client.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -13,7 +13,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  bool _automaticLogin = false;
   bool _waitingForResponse = false;
 
   final formKey = new GlobalKey<FormState>();
@@ -23,24 +22,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void initState() {
     super.initState();
-    App.socketClient.addListener('auth', this.loginResponse);
     this._waitingForResponse = true;
-    this.injectPersistent().whenComplete(() {
-      setState(() {
-        this._waitingForResponse = false;
-      });
-    });
-  }
-
-  void storePersistent(String key, String value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    prefs.setString(key, value);
-  }
-
-  Future<String> getPersistent(String key) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(key);
   }
 
   void loginResponse(String status, String reason, dynamic data) {
@@ -92,15 +74,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (this._automaticLogin || this._waitingForResponse) {
+    if (this._waitingForResponse) {
       return new Center(child: CircularProgressIndicator());
-    }
-
-    if (this._password != null) {
-      setState(() {
-        this._automaticLogin = true;
-      });
-      this.tryToLogin(_username, _password);
     }
 
     return new Container(
@@ -144,9 +119,20 @@ class _LoginPageState extends State<LoginPage> {
               onPressed: () {
                 if (this.formKey.currentState.validate()) {
                   this.formKey.currentState.save();
-                  this.storePersistent('username', this._username);
-                  this.storePersistent('password', this._password);
-                  this.tryToLogin(this._username, this._password);
+                  App.socketClient.username = this._username;
+                  App.socketClient.password = this._password;
+                  setState(() {
+                    this._waitingForResponse = true;
+                  });
+                  App.socketClient.attemptLogin().then(
+                      (ServerResponse response) {
+                    App.socketClient.sessionId = response.data;
+                  }, onError: (ServerResponse response) {
+                    Scaffold.of(context).showSnackBar(new SnackBar(
+                        content: Text('Invalid login or password')));
+                  }).whenComplete(() {
+                    this._waitingForResponse = false;
+                  });
                 }
               },
             ),
