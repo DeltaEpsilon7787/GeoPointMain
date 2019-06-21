@@ -20,6 +20,7 @@ class MapPage extends StatefulWidget {
   @override
   _MapPageStateNew createState() => _MapPageStateNew();
 }
+
 /*
 class _MapPageState extends State<MapPage>
     with AutomaticKeepAliveClientMixin<MapPage> {
@@ -227,6 +228,8 @@ class _MapPageStateNew extends State<MapPage> {
   List<CircleMarker> _myPositions = [];
   Map<String, List<CircleMarker>> _friendPositions = {};
 
+  List<LatLng> _polyline = [];
+
   MapController _mapController;
   MapOptions _mapOptions;
 
@@ -237,8 +240,33 @@ class _MapPageStateNew extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    return Text('MAP');
+    return FlutterMap(
+      mapController: _mapController,
+      options: _mapOptions,
+      layers: [
+        new TileLayerOptions(
+          urlTemplate:
+              "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
+          additionalOptions: {
+            'accessToken': MAP_TOKEN,
+            'id': 'mapbox.streets',
+          },
+        ),
+        new PolylineLayerOptions(
+          polylines: [
+            new Polyline(
+              points: _polyline,
+              strokeWidth: 10.0,
+              color: Color.fromRGBO(0, 179, 253, 0.8),
+            ),
+          ],
+        ),
+        // Big red stationary radius while in stationary state.
+        new CircleLayerOptions(circles: [this._myPositions.last]),
+        // Recorded locations.
+        new CircleLayerOptions(circles: this._myPositions)
+      ],
+    );
   }
 
   void initState() {
@@ -259,36 +287,74 @@ class _MapPageStateNew extends State<MapPage> {
         .getPositionStream(LocationOptions(
             accuracy: LocationAccuracy.high, distanceFilter: 10))
         .listen(this._registerPosition);
+
+    this._registerCurrentPosition();
+  }
+
+  void _registerCurrentPosition() async {
+    await Geolocator().getCurrentPosition().then(this._registerPosition);
   }
 
   void _onPositionChanged(MapPosition pos, bool hasGesture, bool isGesture) {
     this._mapOptions.crs.scale(_mapController.zoom);
   }
 
-  void _registerPosition(Position position) {
-    App.socketClient.geopointPost(position.latitude, position.longitude);
-    App.socketClient.geopointGet().then((ServerResponse response) {});
+  void _registerPosition(Position position) async {
+    await App.socketClient
+        .geopointPost(position.latitude, position.longitude)
+        .then((_) {
+      this._myPositions.add(_MapPageStateNew.transformPosition(
+          lat: position.latitude,
+          lon: position.longitude,
+          time: App.socketClient.serverTime));
+    });
   }
 
   void _updatePoints() {
     App.socketClient.geopointGet().then((ServerResponse response1) =>
         App.socketClient.geopointGetFriends().then((ServerResponse response2) {
-          this._myPositions.clear();
-          List<Map<String, double>> myCoords = response1.data;
+          final myCoords = response1.data as List<dynamic>;
+          
+          var friendCoords = [];
+          try {
+            friendCoords = response2.data as List<dynamic>;
+          } catch (Exception) {}
 
-          this._friendPositions.clear();
-          List<Map<String, dynamic>> friendCoords = response2.data;
+          print(myCoords.toString());
 
-          setState(() {
-            this._myPositions = [
-              for (var datum in myCoords)
-                _MapPageStateNew.transformPosition(
-                    lat: datum['lat'],
-                    lon: datum['lon'],
-                    username: App.socketClient.username,
-                    time: datum['time'])
-            ];
+          if (myCoords.length > 0) {
+            this._myPositions.clear();
+          }
+
+          if (friendCoords.length > 0) {
+            this._friendPositions.clear();
+          }
+
+          myCoords.forEach((var datum) {
+            CircleMarker marker = _MapPageStateNew.transformPosition(
+                lat: datum['lat'] as double,
+                lon: datum['lon'] as double,
+                time: datum['time'] as double);
+            if (marker != null) {
+              this._myPositions.add(marker);
+            }
           });
+
+          friendCoords.forEach((var datum) {
+            if (!this._friendPositions.containsKey(datum['friend'])) {
+              this._friendPositions[datum['friend']] = [];
+            }
+            CircleMarker marker = _MapPageStateNew.transformPosition(
+                lat: datum['lat'] as double,
+                lon: datum['lon'] as double,
+                time: datum['time'] as double,
+                username: datum['friend'] as String);
+            if (marker != null) {
+              this._friendPositions[datum['friend']].add(marker);
+            }
+          });
+
+          setState(() {});
         }));
   }
 
@@ -296,8 +362,9 @@ class _MapPageStateNew extends State<MapPage> {
       {@required double lat,
       @required double lon,
       @required double time,
-      @required String username}) {
-    List<int> digest = sha256.convert(utf8.encode(username)).bytes.getRange(0, 2).toList();
+      String username: 'We'}) {
+    List<int> digest =
+        sha1.convert(utf8.encode(username)).bytes.getRange(0, 2).toList();
 
     double lerp = 5 * (App.socketClient.serverTime - time) / (60 * 5);
     if (lerp < 5) {
