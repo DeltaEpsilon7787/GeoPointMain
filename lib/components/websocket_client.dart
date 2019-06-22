@@ -77,6 +77,9 @@ class WebsocketClient {
   Future<ServerResponse> geopointPostCoords(double lat, double lon) async =>
       this._sendMessage('geopoint_post', data: {'lat': lat, 'lon': lon});
 
+  Future<ServerResponse> getMyFriends() async =>
+      this._sendMessage('get_my_friends');
+
   Future<bool> tryToAuth({String username, String password}) async {
     if (username == null && password == null) {
       SharedPreferences prefs = await SharedPreferences.getInstance();
