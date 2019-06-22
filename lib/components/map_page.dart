@@ -262,7 +262,7 @@ class _MapPageStateNew extends State<MapPage> {
           ],
         ),
         // Big red stationary radius while in stationary state.
-        new CircleLayerOptions(circles: [this._myPositions.last]),
+        new CircleLayerOptions(circles: this._myPositions.length > 0 ? [this._myPositions.last] : []),
         // Recorded locations.
         new CircleLayerOptions(circles: this._myPositions)
       ],
