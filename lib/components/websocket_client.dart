@@ -5,200 +5,155 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/io.dart';
 
 class ServerResponse {
+  int id;
+  bool status;
   String code;
   dynamic data;
 
-  ServerResponse(this.code, this.data);
+  ServerResponse(this.id, this.status, this.code, this.data);
 }
 
 class WebsocketClient {
-  String _username;
+  IOWebSocketChannel _authorizedChannel;
 
-  String _password;
+  IOWebSocketChannel _guestChannel;
 
-  String _sessionId;
-
-  final IOWebSocketChannel channel = IOWebSocketChannel.connect(
-      'ws://31.25.28.142:8010',
-      pingInterval: Duration(seconds: 5));
+  int _id = 0;
 
   final StreamController<List<String>> friendRequestStream =
       StreamController.broadcast();
 
-  final StreamController<bool> sessionAcquiredStream =
+  final StreamController<ServerResponse> _responder =
       StreamController.broadcast();
 
-  Timer _timeUpdaterTimer;
-
-  Timer _friendPollerTimer;
-
-  double serverTime = 0;
-
-  int _id = 0;
+  Duration serverTimeOffset = Duration.zero;
+  double get ourTime => (this.timer.elapsed + this.serverTimeOffset).inMicroseconds / 10e6;
 
   bool acquiringSession = false;
 
+  final Stopwatch timer = Stopwatch()..start();
+
+  String username;
+
   WebsocketClient() {
-    // Set up time poller
-    this._timeUpdaterTimer = Timer.periodic(Duration(seconds: 1), (_) {
-      this._sendMessage('get_time').then((ServerResponse response) {
-        this.serverTime = response.data;
-      }, onError: this._handleDefaultErrors);
-    });
-
-    // Friend requests poller
-    this._friendPollerTimer = Timer.periodic(Duration(seconds: 10), (_) {
-      if (this.username != null && this._sessionId != null) {
-        this._sendMessage('get_my_friends').then((ServerResponse response) {
-          List<String> friends = List.castFrom(response.data);
-          if (friends.length > 0) {
-            this.friendRequestStream.sink.add(friends);
-          }
-        });
-      }
-    });
-
-    this._autoLogin();
-  }
-
-  String get password => this._password;
-
-  set password(String password) {
-    this._password = password;
-    this._persistentSave();
-  }
-
-  String get sessionId => this._sessionId;
-
-  set sessionId(String sessionId) {
-    this._sessionId = sessionId;
-    this.sessionAcquiredStream.add(sessionId != null);
-  }
-
-  String get username => this._username;
-
-  set username(String username) {
-    this._username = username;
-    this._persistentSave();
+    this._establishServerOffset();
   }
 
   Future<ServerResponse> attemptActivation(String key) async =>
-      this._sendMessage('activate', data: {'key': key});
-
-  Future<ServerResponse> attemptLogin() async => this._sendMessage('auth',
-      data: {'username': this._username, 'password': this._password});
+      this._sendMessage('activate', data: {'key': key}, authorized: false);
 
   Future<ServerResponse> attemptRegister(
           String username, String password, String email) async =>
       this._sendMessage('register',
-          data: {'username': username, 'password': password, 'email': email});
+          data: {'username': username, 'password': password, 'email': email},
+          authorized: false);
 
-  Future<ServerResponse> geopointGet() async =>
-      this._sendMessage('geopoint_get');
+  Future<bool> establishGuestSession() async {
+    if (this._guestChannel != null) {
+      return Future.value();
+    }
 
-  Future<ServerResponse> geopointGetFriends() async =>
+    this._guestChannel =
+        IOWebSocketChannel.connect('ws://31.25.28.142:8010/websocket');
+
+    this._guestChannel.stream.listen(this._processResponse);
+
+    return this
+        ._responder
+        .stream
+        .firstWhere((ServerResponse response) {
+          return response.code == 'GUEST_SESSION';
+        })
+        .then((ServerResponse response) => Future.value(true))
+        .timeout(Duration(seconds: 5), onTimeout: () => Future.value(false));
+  }
+
+  Future<ServerResponse> geopointGetFriendsCoords() async =>
       this._sendMessage('geopoint_get_friends');
 
-  Future<ServerResponse> geopointPost(double lat, double lon) async =>
+  Future<ServerResponse> geopointGetMyCoords() async =>
+      this._sendMessage('geopoint_get');
+
+  Future<ServerResponse> geopointPostCoords(double lat, double lon) async =>
       this._sendMessage('geopoint_post', data: {'lat': lat, 'lon': lon});
 
-  void _acquireNewSession() {
-    if (this.acquiringSession) {
-      return;
+  Future<bool> tryToAuth({String username, String password}) async {
+    if (username == null && password == null) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      username = prefs.getString('username');
+      password = prefs.getString('password');
+
+      if (username == null || password == null) {
+        return Future.value(false);
+      }
+    }
+    return this._tryToEstablishSession(username, password);
+  }
+
+  void _establishServerOffset() async {
+    await this._sendMessage('get_time', authorized: false).then(
+        (ServerResponse response) => this.serverTimeOffset = Duration(microseconds: (10e6 * response.data) as int)
+    );
+  }
+
+  void _processResponse(dynamic stringData) {
+    dynamic data;
+    try {
+      data = jsonDecode(stringData);
+    } catch (Exception) {
+      this._responder.add(ServerResponse(-1, true, stringData, null));
+      return null;
     }
 
-    if (this._username == null || this._password == null) {
-      return;
-    }
-
-    if (this.sessionId == null) {
-      this.acquiringSession = true;
-      this._sendMessage('auth', data: {
-        'username': username,
-        'password': password
-      }).then((ServerResponse response) {
-        this.sessionId = response.data;
-      }).whenComplete(() {
-        this.acquiringSession = false;
-      });
-    }
+    this._responder.add(ServerResponse(
+        data['id'], data['status'] == 'success', data['code'], data['data']));
   }
-
-  void _autoLogin() async {
-    await this._persistentGet();
-    this._acquireNewSession();
-  }
-
-  void _handleDefaultErrors(ServerResponse response) {
-    switch (response.code) {
-      case 'SESSION_EXPIRED':
-        this._sessionId = null;
-        this._acquireNewSession();
-        break;
-      case 'USER_NOT_LOGGED':
-        if (this._sessionId != null) {
-          this._sessionId = null;
-        }
-        break;
-      default:
-        break;
-    }
-  }
-
-  Future _persistentGet() async {
-    return SharedPreferences.getInstance().then((SharedPreferences prefs) {
-      this._username = prefs.getString('username');
-      this._password = prefs.getString('password');
-    });
-  }
-
-  Future _persistentSave() async {
-    return SharedPreferences.getInstance().then((SharedPreferences prefs) {
-      prefs.setString("username", this.username);
-      prefs.setString("password", this.password);
-    });
-  }
-
-  int _reserveId() => this._id++;
 
   Future<ServerResponse> _sendMessage(String action,
-      {Map<String, dynamic> data}) async {
-    int reservedId = this._reserveId();
+      {Map<String, dynamic> data, bool authorized: true}) async {
+    int reservedId = this._id++;
 
     var actionInfo = {'action': action, 'id': reservedId};
 
-    var sessionInfo = {
-      'username': this._username,
-      'session_id': this._sessionId
-    };
-
     var serverRequest = actionInfo;
-    if (this._username != null && this._sessionId != null) {
-      serverRequest.addAll(sessionInfo);
-    }
     if (data != null) {
       serverRequest.addAll(data);
     }
 
-    this.channel.sink.add(jsonEncode(serverRequest));
+    if (authorized) {
+      this._authorizedChannel.sink.add(jsonEncode(serverRequest));
+    } else {
+      this._guestChannel?.sink?.add(jsonEncode(serverRequest));
+    }
+    return this._responder.stream.firstWhere((ServerResponse response) {
+      return response.id == reservedId;
+    });
+  }
 
-    return this
-        .channel
-        .stream
-        .where((dynamic stringData) {
-          dynamic data = jsonDecode(stringData);
-          return data['id'] == reservedId;
-        })
-        .first
-        .then((dynamic stringData) {
-          dynamic data = jsonDecode(stringData);
-          ServerResponse response = ServerResponse(data['code'], data['data']);
-          if (data['status'] == 'fail') {
-            return Future.error(response);
-          } else {
-            return Future.value(response);
-          }
-        })
-        .catchError(this._handleDefaultErrors);
+  Future<bool> _tryToEstablishSession(String username, String password) async {
+    if (this._authorizedChannel != null) {
+      this._authorizedChannel.sink.close();
+    }
+
+    var temporary = IOWebSocketChannel.connect(
+        'ws://31.25.28.142:8010/websocket/$username/$password');
+
+    this.acquiringSession = true;
+
+    temporary.stream.listen(this._processResponse);
+
+    return this._responder.stream.firstWhere((ServerResponse response) {
+      return ['AUTH_SUCCESSFUL', 'AUTH_FAILED'].contains(response.code);
+    }).then((ServerResponse response) {
+      switch (response.code) {
+        case ('AUTH_SUCCESSFUL'):
+          this._authorizedChannel = temporary;
+          this.username = username;
+          return Future.value(true);
+        case ('AUTH_FAILED'):
+          return Future.value(false);
+      }
+    });
   }
 }

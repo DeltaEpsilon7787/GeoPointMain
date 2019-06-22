@@ -1,11 +1,11 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geosquad/components/websocket_client.dart';
-//import 'package:geosquad/components/login_page.dart';
+import 'package:geosquad/components/login_page.dart';
 import 'package:geosquad/components/register_page.dart';
 import 'package:geosquad/components/map_page.dart';
 import 'package:geosquad/components/profile.dart';
-import 'package:geosquad/components/auth_page.dart';
-import 'package:geosquad/authorization_page.dart';
 
 void main() => runApp(App());
 
@@ -16,7 +16,6 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
         title: 'Geopoint Squad',
         theme: ThemeData(
           // This is the theme of your application.
@@ -32,20 +31,78 @@ class App extends StatelessWidget {
         ),
         initialRoute: '/',
         routes: {
-          '/': (context) => new MainPage(),
-          '/auth': (context) => new LoginPage(),
-          '/register': (context) => new RegisterPage(),
-          //'/map': (context) => new MapPage(),
+          '/': (context) => new Home(),
+          '/login': (context) => new LoginPage(),
+          '/auth': (context) => new RegisterPage(),
+          '/map': (context) => new MapPage(),
           '/profile': (context) => new Profile()
         });
   }
 }
 
-class MainPage extends StatelessWidget {
+enum APP_STATE {
+  INITIAL,
+  FIRST_CONNECTION_FAILED,
+  AUTO_LOGIN_SUCCESS,
+  AUTO_LOGIN_FAILED
+}
+
+class Home extends StatefulWidget {
+  @override
+  _HomeState createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  APP_STATE _currentState = APP_STATE.INITIAL;
+
+  void initState() {
+    super.initState();
+
+    App.socketClient.establishGuestSession().then((bool status) {
+      if (!status) {
+        this._currentState = APP_STATE.FIRST_CONNECTION_FAILED;
+        return null;
+      }
+      return Future.value();
+    }).then((_) {
+      return App.socketClient.tryToAuth().then((bool status) {
+        if (status) {
+          this._currentState = APP_STATE.AUTO_LOGIN_SUCCESS;
+        } else {
+          this._currentState = APP_STATE.AUTO_LOGIN_FAILED;
+        }
+        return Future.value();
+      });
+    }).whenComplete(() {
+      setState(() {});
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      body: new LoginPage()
-    );
+        appBar: AppBar(title: Text('GeoPoint')),
+        body: () {
+          switch (this._currentState) {
+            case APP_STATE.INITIAL:
+              return new Center(child: CircularProgressIndicator());
+            case APP_STATE.FIRST_CONNECTION_FAILED:
+              return new Dialog(
+                  child: Column(
+                children: <Widget>[
+                  Text('We were unable to connect to GeoPoint server'),
+                  RaisedButton(
+                      child: Text('OK'),
+                      onPressed: () {
+                        exit(0);
+                      })
+                ],
+              ));
+            case APP_STATE.AUTO_LOGIN_SUCCESS:
+              return new MapPage();
+            case APP_STATE.AUTO_LOGIN_FAILED:
+              return new LoginPage();
+          }
+        }());
   }
 }

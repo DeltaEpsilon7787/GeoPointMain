@@ -1,11 +1,10 @@
-import 'dart:async';
-
-import 'package:flutter/material.dart';
-import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../main.dart';
-import 'websocket_client.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -13,34 +12,14 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  bool _waitingForResponse = false;
-
   final formKey = new GlobalKey<FormState>();
 
   String _username;
   String _password;
 
-  void initState() {
-    super.initState();
-    this._waitingForResponse = true;
-    App.socketClient.sessionAcquiredStream.stream
-        .listen((bool status) {
-          if (status) {
-            Navigator.of(this.context).pushReplacementNamed('/map');
-          }
-          setState(() {
-            this._waitingForResponse = !status;
-          });
-        })
-        .asFuture()
-        .timeout(Duration(seconds: 5), onTimeout: () {
-          this._waitingForResponse = false;
-        });
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (this._waitingForResponse) {
+    if (App.socketClient.acquiringSession) {
       return new Center(child: CircularProgressIndicator());
     }
 
@@ -85,19 +64,17 @@ class _LoginPageState extends State<LoginPage> {
               onPressed: () {
                 if (this.formKey.currentState.validate()) {
                   this.formKey.currentState.save();
-                  App.socketClient.username = this._username;
-                  App.socketClient.password = this._password;
-                  setState(() {
-                    this._waitingForResponse = true;
-                  });
-                  App.socketClient.attemptLogin().then(
-                      (ServerResponse response) {
-                    App.socketClient.sessionId = response.data;
-                  }, onError: (ServerResponse response) {
-                    Scaffold.of(context).showSnackBar(new SnackBar(
-                        content: Text('Invalid login or password')));
-                  }).whenComplete(() {
-                    this._waitingForResponse = false;
+                  App.socketClient
+                      .tryToAuth(
+                          username: this._username, password: this._password)
+                      .then((bool status) {
+                    if (status) {
+                      this._saveCredentials(this._username, this._password);
+                      Navigator.of(this.context).pushReplacementNamed('/map');
+                    } else {
+                      Scaffold.of(this.context).showSnackBar(
+                          SnackBar(content: Text('Invalid login or password')));
+                    }
                   });
                 }
               },
@@ -106,5 +83,12 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  void _saveCredentials(String username, String password) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    prefs.setString('username', username);
+    prefs.setString('password', password);
   }
 }
