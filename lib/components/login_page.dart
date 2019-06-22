@@ -32,9 +32,12 @@ class _LoginPageState extends State<LoginPage> {
             new FlatButton(
               padding: EdgeInsets.only(
                   left: 2.0, top: 0.0, right: 0.0, bottom: 0.0),
-              child: new Text("Registrate now",
+              child: new Text("Sign up now",
                 style: new TextStyle(fontWeight: FontWeight.bold),),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(this.context)
+                    .pushReplacementNamed('/auth');
+              },
               splashColor: Colors.white,
               highlightColor: Colors.white,
             ),
@@ -53,9 +56,10 @@ class _LoginPageState extends State<LoginPage> {
                   fontSize: MediaQuery
                       .of(context)
                       .size
-                      .height * 0.1,
+                      .height * 0.07,
                   fontWeight: FontWeight.bold,
                   fontStyle: FontStyle.italic,
+                  fontFamily: 'Times new roman',
                 ),
               ),
             ),
@@ -114,7 +118,9 @@ class _LoginPageState extends State<LoginPage> {
                                   } else {
                                     Scaffold.of(this.context).showSnackBar(
                                         SnackBar(content: Text(
-                                            'Invalid login or password')));
+                                            'Invalid login or password')
+                                        ),
+                                    );
                                   }
                                 });
                               }
