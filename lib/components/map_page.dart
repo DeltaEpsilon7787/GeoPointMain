@@ -246,7 +246,7 @@ class _MapPageStateNew extends State<MapPage> {
       layers: [
         new TileLayerOptions(
           urlTemplate:
-          "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
+              "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
           additionalOptions: {
             'accessToken': MAP_TOKEN,
             'id': 'mapbox.streets',
@@ -262,7 +262,9 @@ class _MapPageStateNew extends State<MapPage> {
           ],
         ),
         // Big red stationary radius while in stationary state.
-        new CircleLayerOptions(circles: [this._myPositions.last]),
+        new CircleLayerOptions(
+            circles:
+                this._myPositions.length > 0 ? [this._myPositions.last] : []),
         // Recorded locations.
         new CircleLayerOptions(circles: this._myPositions)
       ],
@@ -285,16 +287,21 @@ class _MapPageStateNew extends State<MapPage> {
     this
         .geo
         .getPositionStream(LocationOptions(
-        accuracy: LocationAccuracy.best, distanceFilter: 10))
+            accuracy: LocationAccuracy.best, distanceFilter: 10))
         .listen(this._registerPosition);
+    
+    this._getFirstPosition();
+  }
 
-    this
+  void _getFirstPosition() async {
+    await this
         .geo
         .getCurrentPosition()
         .then((Position pos) => this._registerPosition(pos));
   }
 
   void _registerPosition(Position position) async {
+    print('Register Position');
     this._myPositions.add(_MapPageStateNew.transformPosition(
         lat: position.latitude,
         lon: position.longitude,
@@ -311,22 +318,22 @@ class _MapPageStateNew extends State<MapPage> {
     List<Future> futures = [];
     futures.add(
         App.socketClient.geopointGetMyCoords().then((ServerResponse response1) {
-          final myCoords = response1.data;
-          print(myCoords.toString());
+      final myCoords = response1.data;
+      print(myCoords.toString());
 
-          if (myCoords.length > 0) {
-            this._myPositions.clear();
-          }
-          myCoords.forEach((var datum) {
-            CircleMarker marker = _MapPageStateNew.transformPosition(
-                lat: datum['lat'] as double,
-                lon: datum['lon'] as double,
-                time: datum['time'] as double);
-            if (marker != null) {
-              this._myPositions.add(marker);
-            }
-          });
-        }));
+      if (myCoords.length > 0) {
+        this._myPositions.clear();
+      }
+      myCoords.forEach((var datum) {
+        CircleMarker marker = _MapPageStateNew.transformPosition(
+            lat: datum['lat'] as double,
+            lon: datum['lon'] as double,
+            time: datum['time'] as double);
+        if (marker != null) {
+          this._myPositions.add(marker);
+        }
+      });
+    }));
 
     futures.add(App.socketClient
         .geopointGetFriendsCoords()
@@ -365,9 +372,9 @@ class _MapPageStateNew extends State<MapPage> {
 
   static CircleMarker transformPosition(
       {@required double lat,
-        @required double lon,
-        @required double time,
-        String username}) {
+      @required double lon,
+      @required double time,
+      String username}) {
     username ??= App.socketClient.username;
     username ??= 'BLANK';
     List<int> digest = sha1.convert(utf8.encode(username)).bytes;
