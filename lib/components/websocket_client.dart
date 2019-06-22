@@ -1,89 +1,158 @@
+import 'dart:async';
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/status.dart';
-import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+class ServerResponse {
+  int id;
+  bool status;
+  String code;
+  dynamic data;
+
+  ServerResponse(this.id, this.status, this.code, this.data);
+}
 
 class WebsocketClient {
-  IOWebSocketChannel channel;
+  IOWebSocketChannel _authorizedChannel;
 
-  String username;
-  String sessionId;
+  IOWebSocketChannel _guestChannel;
 
-  Map<String, List> _callbacks = {};
+  int _id = 0;
+
+  final StreamController<List<String>> friendRequestStream =
+      StreamController.broadcast();
+
+  final StreamController<ServerResponse> responder =
+      StreamController.broadcast();
+
+  double serverTime = 0;
+
+  bool acquiringSession = false;
 
   WebsocketClient() {
-    channel = IOWebSocketChannel.connect('ws://31.25.28.142:8010',
-        pingInterval: Duration(seconds: 5));
-
-    channel.stream.listen((dynamic response) {
-      var responseObject = jsonDecode(response);
-      String action = responseObject['action'];
-      String status = responseObject['status'];
-      String reason = responseObject['reason'];
-
-      if (_callbacks.containsKey(action)) {
-        for (dynamic listener in _callbacks[action]) {
-          listener(status, reason, responseObject);
-        }
-      }
-
-      return;
+    // Set up time poller
+    Timer.periodic(Duration(seconds: 1), (_) {
+      this
+          ._sendMessage('get_time', authorized: false)
+          .then((ServerResponse response) {
+        this.serverTime = response.data;
+      });
     });
   }
 
-  bool isNotConnected() {
-    return channel.closeCode == goingAway;
-  }
-
-  void addListener(String action, dynamic callback) {
-    if (!_callbacks.containsKey(action)) {
-      _callbacks[action] = [];
+  void processData(dynamic stringData) {
+    dynamic data;
+    try {
+      data = jsonDecode(stringData);
+    } catch (Exception) {
+      this.responder.add(ServerResponse(-1, true, stringData, null));
+      return null;
     }
-    _callbacks[action].add(callback);
+
+    this.responder.add(ServerResponse(
+        data['id'], data['status'] == 'success', data['code'], data['data']));
   }
 
-  void setSessionId(String sessionId) {
-    this.sessionId = sessionId;
+  Future<ServerResponse> attemptActivation(String key) async =>
+      this._sendMessage('activate', data: {'key': key}, authorized: false);
+
+  Future<ServerResponse> attemptRegister(
+          String username, String password, String email) async =>
+      this._sendMessage('register',
+          data: {'username': username, 'password': password, 'email': email},
+          authorized: false);
+
+  Future<bool> establishGuestSession() async {
+    if (this._guestChannel != null) {
+      return Future.value();
+    }
+
+    this._guestChannel =
+        IOWebSocketChannel.connect('ws://31.25.28.142:8010/websocket');
+
+    this._guestChannel.stream.listen(this.processData);
+
+    return this
+        .responder
+        .stream
+        .firstWhere((ServerResponse response) {
+          return response.code == 'GUEST_SESSION';
+        })
+        .then((ServerResponse response) => Future.value(true))
+        .timeout(Duration(seconds: 5), onTimeout: () => Future.value(false));
   }
 
-  void geopointPost(bg.Location location) {
-    channel.sink.add(jsonEncode({
-      'action': 'geopoint_post',
-      'username': this.username,
-      'session_id': this.sessionId,
-      'lat': location.coords.latitude,
-      'lon': location.coords.longitude
-    }));
+  Future<ServerResponse> geopointGet() async =>
+      this._sendMessage('geopoint_get');
+
+  Future<ServerResponse> geopointGetFriends() async =>
+      this._sendMessage('geopoint_get_friends');
+
+  Future<ServerResponse> geopointPost(double lat, double lon) async =>
+      this._sendMessage('geopoint_post', data: {'lat': lat, 'lon': lon});
+
+  Future<bool> tryLogin({String username, String password}) async {
+    if (username == null && password == null) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      username = prefs.getString('username');
+      password = prefs.getString('password');
+
+      if (username == null || password == null) {
+        return Future.value(false);
+      }
+    }
+    return this._tryEstablishSession(username, password);
   }
 
-  void geopointGet() {
-    channel.sink.add(jsonEncode({
-      'action': 'geopoint_get',
-      'username': this.username,
-      'session_id': this.sessionId
-    }));
+  int _reserveId() => this._id++;
+
+  Future<ServerResponse> _sendMessage(String action,
+      {Map<String, dynamic> data, bool authorized: true}) async {
+    int reservedId = this._reserveId();
+
+    var actionInfo = {'action': action, 'id': reservedId};
+
+    var serverRequest = actionInfo;
+    if (data != null) {
+      serverRequest.addAll(data);
+    }
+
+    if (authorized) {
+      this._authorizedChannel.sink.add(jsonEncode(serverRequest));
+    } else {
+      this._guestChannel?.sink?.add(jsonEncode(serverRequest));
+    }
+    return this.responder.stream.firstWhere((ServerResponse response) {
+      return response.id == reservedId;
+    });
   }
 
-  void pingServer() {
-    channel.sink.add(jsonEncode({
-      'action': 'get_stat',
-      'username': this.username,
-      'session_id': this.sessionId,
-    }));
-  }
+  Future<bool> _tryEstablishSession(String username, String password) async {
+    if (this._authorizedChannel != null) {
+      this._authorizedChannel.sink.close();
+    }
 
-  void attemptRegister(String username, String password, String email) {
-    channel.sink.add(jsonEncode({
-      'action': 'register',
-      'username': username,
-      'password': password,
-      'email': email
-    }));
-  }
+    var temporary = IOWebSocketChannel.connect(
+        'ws://31.25.28.142:8010/websocket/$username/$password');
 
-  void attemptLogin(String username, String password) {
-    this.username = username;
-    channel.sink.add(jsonEncode(
-        {'action': 'auth', 'username': username, 'password': password}));
+    this.acquiringSession = true;
+
+    temporary.stream.listen(this.processData);
+
+    return this.responder.stream.firstWhere((ServerResponse response) {
+      return ['AUTH_SUCCESSFUL', 'AUTH_FAILED'].contains(response.code);
+    }).then((ServerResponse response) {
+      switch (response.code) {
+        case ('AUTH_SUCCESSFUL'):
+          this._authorizedChannel = temporary;
+          return Future.value(true);
+        case ('AUTH_FAILED'):
+          return Future.value(false);
+      }
+    });
   }
 }

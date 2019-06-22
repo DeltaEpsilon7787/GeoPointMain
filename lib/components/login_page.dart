@@ -1,9 +1,8 @@
-import 'dart:async';
+import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
 
 import '../main.dart';
 
@@ -13,94 +12,15 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  bool _automaticLogin = false;
-  bool _waitingForResponse = false;
-
   final formKey = new GlobalKey<FormState>();
 
   String _username;
   String _password;
 
-  void initState() {
-    super.initState();
-    App.socketClient.addListener('auth', this.loginResponse);
-    this._waitingForResponse = true;
-    this.injectPersistent().whenComplete(() {
-      setState(() {
-        this._waitingForResponse = false;
-      });
-    });
-  }
-
-  void storePersistent(String key, String value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    prefs.setString(key, value);
-  }
-
-  Future<String> getPersistent(String key) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(key);
-  }
-
-  void loginResponse(String status, String reason, dynamic data) {
-    setState(() {
-      this._waitingForResponse = false;
-    });
-
-    if (status == 'success') {
-      App.socketClient.setSessionId(data['session_id']);
-      this.storePersistent('username', this._username);
-      this.storePersistent('password', this._password);
-    } else {
-      if (this._automaticLogin) {
-        this.storePersistent('password', null);
-        setState(() {
-          this._automaticLogin = false;
-          this._password = null;
-        });
-      }
-      Scaffold.of(context).showSnackBar(new SnackBar(content: Text(reason)));
-    }
-
-    if (status == 'success') {
-      Navigator.of(context).pushNamed('/map').then((_) {
-        if (!this._automaticLogin) {
-          Scaffold.of(context)
-              .showSnackBar(new SnackBar(content: Text(reason)));
-        }
-      });
-    }
-  }
-
-  void tryToLogin(String username, String password) {
-    setState(() {
-      this._waitingForResponse = true;
-    });
-    App.socketClient.attemptLogin(username, password);
-  }
-
-  Future injectPersistent() async {
-    await this.getPersistent('username').then((value) {
-      this._username = value;
-    }).whenComplete(() {
-      this.getPersistent('password').then((value) {
-        this._password = value;
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (this._automaticLogin || this._waitingForResponse) {
+    if (App.socketClient.acquiringSession) {
       return new Center(child: CircularProgressIndicator());
-    }
-
-    if (this._password != null) {
-      setState(() {
-        this._automaticLogin = true;
-      });
-      this.tryToLogin(_username, _password);
     }
 
     return new Container(
@@ -142,9 +62,18 @@ class _LoginPageState extends State<LoginPage> {
               onPressed: () {
                 if (this.formKey.currentState.validate()) {
                   this.formKey.currentState.save();
-                  this.storePersistent('username', this._username);
-                  this.storePersistent('password', this._password);
-                  this.tryToLogin(this._username, this._password);
+                  App.socketClient
+                      .tryLogin(
+                          username: this._username, password: this._password)
+                      .then((bool status) {
+                    if (status) {
+                      this._saveCredentials(this._username, this._password);
+                      Navigator.of(this.context).pushReplacementNamed('/map');
+                    } else {
+                      Scaffold.of(this.context).showSnackBar(
+                          SnackBar(content: Text('Invalid login or password')));
+                    }
+                  });
                 }
               },
             ),
@@ -152,5 +81,12 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  void _saveCredentials(String username, String password) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    prefs.setString('username', username);
+    prefs.setString('password', password);
   }
 }
