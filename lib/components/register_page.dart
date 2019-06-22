@@ -121,10 +121,22 @@ class _RegisterPageState extends State<RegisterPage> {
                                   .pushReplacementNamed('/validate');
                             }
                             else {
-                              Scaffold.of(this.context).showSnackBar(
-                                SnackBar(content: Text(
-                                    'Invalid key')
-                                ),
+                              return showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return new AlertDialog(
+                                    title: new Text("An error occurred", style: new TextStyle(fontWeight: FontWeight.bold)),
+                                    content: new Text(response.code),
+                                    actions: <Widget>[
+                                      new FlatButton(
+                                        child: new Text('OK'),
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
                               );
                             }
                           },

@@ -116,10 +116,24 @@ class _LoginPageState extends State<LoginPage> {
                                     Navigator.of(this.context)
                                         .pushReplacementNamed('/map');
                                   } else {
-                                    Scaffold.of(this.context).showSnackBar(
-                                        SnackBar(content: Text(
-                                            'Invalid login or password')
-                                        ),
+                                    return showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return new AlertDialog(
+                                          title: new Text("An error occurred",
+                                              style: new TextStyle(
+                                                  fontWeight: FontWeight.bold)),
+                                          content: new Text('Invalid login or password'),
+                                          actions: <Widget>[
+                                            new FlatButton(
+                                              child: new Text('OK'),
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     );
                                   }
                                 });
