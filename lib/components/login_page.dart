@@ -65,7 +65,7 @@ class _LoginPageState extends State<LoginPage> {
                 if (this.formKey.currentState.validate()) {
                   this.formKey.currentState.save();
                   App.socketClient
-                      .tryLogin(
+                      .tryToAuth(
                           username: this._username, password: this._password)
                       .then((bool status) {
                     if (status) {

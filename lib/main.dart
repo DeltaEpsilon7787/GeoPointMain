@@ -65,7 +65,7 @@ class _HomeState extends State<Home> {
       }
       return Future.value();
     }).then((_) {
-      return App.socketClient.tryLogin().then((bool status) {
+      return App.socketClient.tryToAuth().then((bool status) {
         if (status) {
           this._currentState = APP_STATE.AUTO_LOGIN_SUCCESS;
         } else {

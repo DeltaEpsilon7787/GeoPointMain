@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 class ServerResponse {
   int id;
@@ -25,35 +23,20 @@ class WebsocketClient {
   final StreamController<List<String>> friendRequestStream =
       StreamController.broadcast();
 
-  final StreamController<ServerResponse> responder =
+  final StreamController<ServerResponse> _responder =
       StreamController.broadcast();
 
-  double serverTime = 0;
+  Duration serverTimeOffset = Duration.zero;
+  double get ourTime => (this.timer.elapsed + this.serverTimeOffset).inMicroseconds / 10e6;
 
   bool acquiringSession = false;
 
+  final Stopwatch timer = Stopwatch()..start();
+
+  String username;
+
   WebsocketClient() {
-    // Set up time poller
-    Timer.periodic(Duration(seconds: 1), (_) {
-      this
-          ._sendMessage('get_time', authorized: false)
-          .then((ServerResponse response) {
-        this.serverTime = response.data;
-      });
-    });
-  }
-
-  void processData(dynamic stringData) {
-    dynamic data;
-    try {
-      data = jsonDecode(stringData);
-    } catch (Exception) {
-      this.responder.add(ServerResponse(-1, true, stringData, null));
-      return null;
-    }
-
-    this.responder.add(ServerResponse(
-        data['id'], data['status'] == 'success', data['code'], data['data']));
+    this._establishServerOffset();
   }
 
   Future<ServerResponse> attemptActivation(String key) async =>
@@ -73,10 +56,10 @@ class WebsocketClient {
     this._guestChannel =
         IOWebSocketChannel.connect('ws://31.25.28.142:8010/websocket');
 
-    this._guestChannel.stream.listen(this.processData);
+    this._guestChannel.stream.listen(this._processResponse);
 
     return this
-        .responder
+        ._responder
         .stream
         .firstWhere((ServerResponse response) {
           return response.code == 'GUEST_SESSION';
@@ -85,16 +68,16 @@ class WebsocketClient {
         .timeout(Duration(seconds: 5), onTimeout: () => Future.value(false));
   }
 
-  Future<ServerResponse> geopointGet() async =>
-      this._sendMessage('geopoint_get');
-
-  Future<ServerResponse> geopointGetFriends() async =>
+  Future<ServerResponse> geopointGetFriendsCoords() async =>
       this._sendMessage('geopoint_get_friends');
 
-  Future<ServerResponse> geopointPost(double lat, double lon) async =>
+  Future<ServerResponse> geopointGetMyCoords() async =>
+      this._sendMessage('geopoint_get');
+
+  Future<ServerResponse> geopointPostCoords(double lat, double lon) async =>
       this._sendMessage('geopoint_post', data: {'lat': lat, 'lon': lon});
 
-  Future<bool> tryLogin({String username, String password}) async {
+  Future<bool> tryToAuth({String username, String password}) async {
     if (username == null && password == null) {
       SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -105,14 +88,31 @@ class WebsocketClient {
         return Future.value(false);
       }
     }
-    return this._tryEstablishSession(username, password);
+    return this._tryToEstablishSession(username, password);
   }
 
-  int _reserveId() => this._id++;
+  void _establishServerOffset() async {
+    await this._sendMessage('get_time', authorized: false).then(
+        (ServerResponse response) => this.serverTimeOffset = Duration(microseconds: (10e6 * response.data) as int)
+    );
+  }
+
+  void _processResponse(dynamic stringData) {
+    dynamic data;
+    try {
+      data = jsonDecode(stringData);
+    } catch (Exception) {
+      this._responder.add(ServerResponse(-1, true, stringData, null));
+      return null;
+    }
+
+    this._responder.add(ServerResponse(
+        data['id'], data['status'] == 'success', data['code'], data['data']));
+  }
 
   Future<ServerResponse> _sendMessage(String action,
       {Map<String, dynamic> data, bool authorized: true}) async {
-    int reservedId = this._reserveId();
+    int reservedId = this._id++;
 
     var actionInfo = {'action': action, 'id': reservedId};
 
@@ -126,12 +126,12 @@ class WebsocketClient {
     } else {
       this._guestChannel?.sink?.add(jsonEncode(serverRequest));
     }
-    return this.responder.stream.firstWhere((ServerResponse response) {
+    return this._responder.stream.firstWhere((ServerResponse response) {
       return response.id == reservedId;
     });
   }
 
-  Future<bool> _tryEstablishSession(String username, String password) async {
+  Future<bool> _tryToEstablishSession(String username, String password) async {
     if (this._authorizedChannel != null) {
       this._authorizedChannel.sink.close();
     }
@@ -141,14 +141,15 @@ class WebsocketClient {
 
     this.acquiringSession = true;
 
-    temporary.stream.listen(this.processData);
+    temporary.stream.listen(this._processResponse);
 
-    return this.responder.stream.firstWhere((ServerResponse response) {
+    return this._responder.stream.firstWhere((ServerResponse response) {
       return ['AUTH_SUCCESSFUL', 'AUTH_FAILED'].contains(response.code);
     }).then((ServerResponse response) {
       switch (response.code) {
         case ('AUTH_SUCCESSFUL'):
           this._authorizedChannel = temporary;
+          this.username = username;
           return Future.value(true);
         case ('AUTH_FAILED'):
           return Future.value(false);

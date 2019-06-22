@@ -3,15 +3,13 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
-/*import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
-    as bg;*/
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
 
-import '../main.dart';
 import './websocket_client.dart';
+import '../main.dart';
 
 const String MAP_TOKEN =
     'pk.eyJ1IjoiY2hyaXN0b2NyYWN5IiwiYSI6ImVmM2Y2MDA1NzIyMjg1NTdhZGFlYmZiY2QyODVjNzI2In0.htaacx3ZhE5uAWN86-YNAQ';
@@ -235,6 +233,8 @@ class _MapPageStateNew extends State<MapPage> {
 
   Timer updateTimer;
 
+  final Geolocator geo = Geolocator();
+
   @override
   bool get wantKeepAlive => true;
 
@@ -274,7 +274,6 @@ class _MapPageStateNew extends State<MapPage> {
 
     this._mapController = new MapController();
     this._mapOptions = new MapOptions(
-      onPositionChanged: this._onPositionChanged,
       center: LatLng(51.5, -0.09),
       zoom: 16.0,
     );
@@ -283,90 +282,97 @@ class _MapPageStateNew extends State<MapPage> {
       this._updatePoints();
     });
 
-    Geolocator()
+    this
+        .geo
         .getPositionStream(LocationOptions(
-            accuracy: LocationAccuracy.high, distanceFilter: 10))
+            accuracy: LocationAccuracy.best, distanceFilter: 10))
         .listen(this._registerPosition);
 
-    this._registerCurrentPosition();
-  }
-
-  void _registerCurrentPosition() async {
-    await Geolocator().getCurrentPosition().then(this._registerPosition);
-  }
-
-  void _onPositionChanged(MapPosition pos, bool hasGesture, bool isGesture) {
-    this._mapOptions.crs.scale(_mapController.zoom);
+    this
+        .geo
+        .getCurrentPosition()
+        .then((Position pos) => this._registerPosition(pos));
   }
 
   void _registerPosition(Position position) async {
+    this._myPositions.add(_MapPageStateNew.transformPosition(
+        lat: position.latitude,
+        lon: position.longitude,
+        time: App.socketClient.ourTime));
+    this._mapOptions.center = LatLng(position.latitude, position.longitude);
+    this._mapOptions.crs.scale(_mapController.zoom);
+
+    setState(() {});
     await App.socketClient
-        .geopointPost(position.latitude, position.longitude)
-        .then((_) {
-      this._myPositions.add(_MapPageStateNew.transformPosition(
-          lat: position.latitude,
-          lon: position.longitude,
-          time: App.socketClient.serverTime));
+        .geopointPostCoords(position.latitude, position.longitude);
+  }
+
+  void _updatePoints() async {
+    List<Future> futures = [];
+    futures.add(
+        App.socketClient.geopointGetMyCoords().then((ServerResponse response1) {
+      final myCoords = response1.data;
+      print(myCoords.toString());
+
+      if (myCoords.length > 0) {
+        this._myPositions.clear();
+      }
+      myCoords.forEach((var datum) {
+        CircleMarker marker = _MapPageStateNew.transformPosition(
+            lat: datum['lat'] as double,
+            lon: datum['lon'] as double,
+            time: datum['time'] as double);
+        if (marker != null) {
+          this._myPositions.add(marker);
+        }
+      });
+    }));
+
+    futures.add(App.socketClient
+        .geopointGetFriendsCoords()
+        .then((ServerResponse response2) {
+      var friendCoords = [];
+      try {
+        friendCoords = response2.data as List<dynamic>;
+      } catch (Exception) {}
+
+      if (friendCoords.length > 0) {
+        this._friendPositions.clear();
+      }
+
+      friendCoords.forEach((var datum) {
+        if (!this._friendPositions.containsKey(datum['friend'])) {
+          this._friendPositions[datum['friend']] = [];
+        }
+        CircleMarker marker = _MapPageStateNew.transformPosition(
+            lat: datum['lat'] as double,
+            lon: datum['lon'] as double,
+            time: datum['time'] as double,
+            username: datum['friend'] as String);
+        if (marker != null) {
+          this._friendPositions[datum['friend']].add(marker);
+        }
+      });
+    }));
+
+    await Future.wait(futures).then((_) {
+      this._buildPolylines();
+      setState(() {});
     });
   }
 
-  void _updatePoints() {
-    App.socketClient.geopointGet().then((ServerResponse response1) =>
-        App.socketClient.geopointGetFriends().then((ServerResponse response2) {
-          final myCoords = response1.data as List<dynamic>;
-          
-          var friendCoords = [];
-          try {
-            friendCoords = response2.data as List<dynamic>;
-          } catch (Exception) {}
-
-          print(myCoords.toString());
-
-          if (myCoords.length > 0) {
-            this._myPositions.clear();
-          }
-
-          if (friendCoords.length > 0) {
-            this._friendPositions.clear();
-          }
-
-          myCoords.forEach((var datum) {
-            CircleMarker marker = _MapPageStateNew.transformPosition(
-                lat: datum['lat'] as double,
-                lon: datum['lon'] as double,
-                time: datum['time'] as double);
-            if (marker != null) {
-              this._myPositions.add(marker);
-            }
-          });
-
-          friendCoords.forEach((var datum) {
-            if (!this._friendPositions.containsKey(datum['friend'])) {
-              this._friendPositions[datum['friend']] = [];
-            }
-            CircleMarker marker = _MapPageStateNew.transformPosition(
-                lat: datum['lat'] as double,
-                lon: datum['lon'] as double,
-                time: datum['time'] as double,
-                username: datum['friend'] as String);
-            if (marker != null) {
-              this._friendPositions[datum['friend']].add(marker);
-            }
-          });
-
-          setState(() {});
-        }));
-  }
+  void _buildPolylines() {}
 
   static CircleMarker transformPosition(
       {@required double lat,
       @required double lon,
       @required double time,
-      String username: 'We'}) {
-    List<int> digest =
-        sha1.convert(utf8.encode(username)).bytes.getRange(0, 2).toList();
+      String username}) {
+    username ??= App.socketClient.username;
+    username ??= 'BLANK'; 
+    List<int> digest = sha1.convert(utf8.encode(username)).bytes;
 
-    double lerp = 5 * (App.socketClient.serverTime - time) / (60 * 5);
+    double lerp = 3;
     if (lerp < 5) {
       return CircleMarker(
           color: Color.fromRGBO(digest[0], digest[1], digest[2], 1.0),
