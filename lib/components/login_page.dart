@@ -53,9 +53,10 @@ class _LoginPageState extends State<LoginPage> {
                   fontSize: MediaQuery
                       .of(context)
                       .size
-                      .height * 0.1,
+                      .height * 0.05,
                   fontWeight: FontWeight.bold,
                   fontStyle: FontStyle.italic,
+                  fontFamily: 'Times new roman',
                 ),
               ),
             ),
