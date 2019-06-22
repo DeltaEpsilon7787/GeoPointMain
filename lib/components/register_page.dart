@@ -18,48 +18,16 @@ class _RegisterPageState extends State<RegisterPage> {
   String _username;
   String _email;
   String _password;
-  String _key;
 
   void initState() {
     super.initState();
-  }
-
-  void tryToRegister(String username, String password, String email) {
-    setState(() {
-      this._waitingForResponse = true;
-    });
-    App.socketClient.attemptRegister(username, password, email);
-  }
-
-  void tryToConfirm(String key) {
-
+    this._waitingForResponse = false;
   }
 
   @override
   Widget build(BuildContext context) {
     if (this._waitingForResponse) {
-      return new Container(
-        padding: new EdgeInsets.all(20.0),
-        child: new SingleChildScrollView(
-          child: new Column(
-            children: <Widget>[
-              new TextFormField(
-                decoration: new InputDecoration(labelText: "Enter a key"),
-              ),
-              new Padding(padding: EdgeInsets.all(5.0)),
-              new RaisedButton(
-                color: new Color(0xff75bbfd),
-                child: new Text(
-                  "Confirm",
-                ),
-                onPressed: () {
-
-                },
-              ),
-            ],
-          ),
-        ),
-      );
+      return new Center(child: CircularProgressIndicator());
     }
 
     return Container(
@@ -109,10 +77,42 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () {
                   if (this.formKey.currentState.validate()) {
                     this.formKey.currentState.save();
+                    setState(() {
+                      this._waitingForResponse = true;
+                    });
                     App.socketClient.attemptRegister(this._username, this._password, this._email).then(
-                        (ServerResponse response) {},
-                        onError: (ServerResponse response) {print(response.code);},
-                    );
+                        (ServerResponse response) {
+                          return new Container(
+                            padding: new EdgeInsets.all(20.0),
+                            child: new SingleChildScrollView(
+                              child: new Column(
+                                children: <Widget>[
+                                  new TextFormField(
+                                    decoration: new InputDecoration(labelText: "Enter a key"),
+                                  ),
+                                  new Padding(padding: EdgeInsets.all(5.0)),
+                                  new RaisedButton(
+                                    color: new Color(0xff75bbfd),
+                                    child: new Text(
+                                      "Confirm",
+                                    ),
+                                    onPressed: () {
+                                      
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        onError: (ServerResponse response) {
+                          Scaffold.of(context).showSnackBar(new SnackBar(
+                              content: Text(response.data)));
+                        },
+                    ).whenComplete(()
+                    {
+                      this._waitingForResponse = false;
+                    });
                   }
                 },
               ),

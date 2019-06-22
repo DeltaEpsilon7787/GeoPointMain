@@ -58,10 +58,11 @@ class WebsocketClient {
       }
     });
 
-    this._persistentGet();
-    this._acquireNewSession();
+    this._autoLogin();
   }
+
   String get password => this._password;
+
   set password(String password) {
     this._password = password;
     this._persistentSave();
@@ -81,6 +82,9 @@ class WebsocketClient {
     this._persistentSave();
   }
 
+  Future<ServerResponse> attemptActivation(String key) async =>
+      this._sendMessage('activate', data: {'key': key});
+
   Future<ServerResponse> attemptLogin() async => this._sendMessage('auth',
       data: {'username': this._username, 'password': this._password});
 
@@ -91,6 +95,9 @@ class WebsocketClient {
 
   Future<ServerResponse> geopointGet() async =>
       this._sendMessage('geopoint_get');
+
+  Future<ServerResponse> geopointGetFriends() async =>
+      this._sendMessage('geopoint_get_friends');
 
   Future<ServerResponse> geopointPost(double lat, double lon) async =>
       this._sendMessage('geopoint_post', data: {'lat': lat, 'lon': lon});
@@ -117,6 +124,11 @@ class WebsocketClient {
     }
   }
 
+  void _autoLogin() async {
+    await this._persistentGet();
+    this._acquireNewSession();
+  }
+
   void _handleDefaultErrors(ServerResponse response) {
     switch (response.code) {
       case 'SESSION_EXPIRED':
@@ -133,15 +145,15 @@ class WebsocketClient {
     }
   }
 
-  void _persistentGet() {
-    SharedPreferences.getInstance().then((SharedPreferences prefs) {
+  Future _persistentGet() async {
+    return SharedPreferences.getInstance().then((SharedPreferences prefs) {
       this._username = prefs.getString('username');
       this._password = prefs.getString('password');
     });
   }
 
-  void _persistentSave() {
-    SharedPreferences.getInstance().then((SharedPreferences prefs) {
+  Future _persistentSave() async {
+    return SharedPreferences.getInstance().then((SharedPreferences prefs) {
       prefs.setString("username", this.username);
       prefs.setString("password", this.password);
     });
