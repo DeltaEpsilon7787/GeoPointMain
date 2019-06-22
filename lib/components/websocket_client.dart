@@ -21,10 +21,10 @@ class WebsocketClient {
   int _id = 0;
 
   final StreamController<List<String>> friendRequestStream =
-      StreamController.broadcast();
+  StreamController.broadcast();
 
   final StreamController<ServerResponse> _responder =
-      StreamController.broadcast();
+  StreamController.broadcast();
 
   Duration serverTimeOffset = Duration.zero;
   double get ourTime => (this.timer.elapsed + this.serverTimeOffset).inMicroseconds / 10e6;
@@ -43,7 +43,7 @@ class WebsocketClient {
       this._sendMessage('activate', data: {'key': key}, authorized: false);
 
   Future<ServerResponse> attemptRegister(
-          String username, String password, String email) async =>
+      String username, String password, String email) async =>
       this._sendMessage('register',
           data: {'username': username, 'password': password, 'email': email},
           authorized: false);
@@ -62,8 +62,8 @@ class WebsocketClient {
         ._responder
         .stream
         .firstWhere((ServerResponse response) {
-          return response.code == 'GUEST_SESSION';
-        })
+      return response.code == 'GUEST_SESSION';
+    })
         .then((ServerResponse response) => Future.value(true))
         .timeout(Duration(seconds: 5), onTimeout: () => Future.value(false));
   }
@@ -93,7 +93,7 @@ class WebsocketClient {
 
   void _establishServerOffset() async {
     await this._sendMessage('get_time', authorized: false).then(
-        (ServerResponse response) => this.serverTimeOffset = Duration(microseconds: (10e6 * response.data) as int)
+            (ServerResponse response) => this.serverTimeOffset = Duration(microseconds: (10e6 * response.data) as int)
     );
   }
 

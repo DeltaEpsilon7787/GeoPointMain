@@ -16,6 +16,7 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Geopoint Squad',
         theme: ThemeData(
           // This is the theme of your application.
@@ -35,7 +36,7 @@ class App extends StatelessWidget {
           '/login': (context) => new LoginPage(),
           '/auth': (context) => new RegisterPage(),
           '/map': (context) => new MapPage(),
-          '/profile': (context) => new Profile()
+          '/profile': (context) => new Profile(),
         });
   }
 }
@@ -81,7 +82,6 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-        appBar: AppBar(title: Text('GeoPoint')),
         body: () {
           switch (this._currentState) {
             case APP_STATE.INITIAL:
@@ -89,20 +89,21 @@ class _HomeState extends State<Home> {
             case APP_STATE.FIRST_CONNECTION_FAILED:
               return new Dialog(
                   child: Column(
-                children: <Widget>[
-                  Text('We were unable to connect to GeoPoint server'),
-                  RaisedButton(
-                      child: Text('OK'),
-                      onPressed: () {
-                        exit(0);
-                      })
-                ],
-              ));
+                    children: <Widget>[
+                      Text('We were unable to connect to GeoPoint server'),
+                      RaisedButton(
+                          child: Text('OK'),
+                          onPressed: () {
+                            exit(0);
+                          })
+                    ],
+                  ));
             case APP_STATE.AUTO_LOGIN_SUCCESS:
               return new MapPage();
             case APP_STATE.AUTO_LOGIN_FAILED:
               return new LoginPage();
           }
-        }());
+        }()
+    );
   }
 }

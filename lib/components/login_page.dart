@@ -1,10 +1,9 @@
-import 'dart:convert';
-
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import '../main.dart';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../main.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -23,61 +22,110 @@ class _LoginPageState extends State<LoginPage> {
       return new Center(child: CircularProgressIndicator());
     }
 
-    return new Container(
-      padding: new EdgeInsets.all(20.0),
-      child: new Form(
-        key: formKey,
-        child: new Column(
+    return new Scaffold(
+      bottomNavigationBar: new BottomAppBar(
+        color: Colors.white,
+        child: new Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            new TextFormField(
-                decoration: new InputDecoration(labelText: "Login"),
-                validator: (value) => value.length < 4 || value.length > 20
-                    ? "Login is incorrect"
-                    : null,
-                initialValue: this._username ?? "",
-                autovalidate: true,
-                onSaved: (String value) => this._username = value),
-            new TextFormField(
-              decoration: new InputDecoration(labelText: "Password"),
-              validator: (value) =>
-                  value.length <= 4 ? "Password too short" : null,
-              autovalidate: true,
-              obscureText: true,
-              onSaved: (String value) =>
-                  _password = sha256.convert(utf8.encode(value)).toString(),
+            new Text("No account?"),
+            new FlatButton(
+              padding: EdgeInsets.only(
+                  left: 2.0, top: 0.0, right: 0.0, bottom: 0.0),
+              child: new Text("Registrate now",
+                style: new TextStyle(fontWeight: FontWeight.bold),),
+              onPressed: () {},
+              splashColor: Colors.white,
+              highlightColor: Colors.white,
             ),
-            new RaisedButton(
-              color: new Color(0xff75bbfd),
-              child: new Text("Register"),
-              onPressed: () {
-                Navigator.of(context).pushNamed('/auth');
-              },
-            ),
-            new Padding(
-              padding: new EdgeInsets.only(top: 20.0),
-            ),
-            new RaisedButton(
-              color: new Color(0xff75bbfd),
+          ],
+        ),
+      ),
+      body: new Center(
+        child: new ListView(
+          shrinkWrap: true,
+          children: <Widget>[
+            new Container(
               child: new Text(
-                "Sign in",
+                "CATFISH-GEO",
+                textAlign: TextAlign.center,
+                style: new TextStyle(
+                  fontSize: MediaQuery
+                      .of(context)
+                      .size
+                      .height * 0.1,
+                  fontWeight: FontWeight.bold,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
-              onPressed: () {
-                if (this.formKey.currentState.validate()) {
-                  this.formKey.currentState.save();
-                  App.socketClient
-                      .tryToAuth(
-                          username: this._username, password: this._password)
-                      .then((bool status) {
-                    if (status) {
-                      this._saveCredentials(this._username, this._password);
-                      Navigator.of(this.context).pushReplacementNamed('/map');
-                    } else {
-                      Scaffold.of(this.context).showSnackBar(
-                          SnackBar(content: Text('Invalid login or password')));
-                    }
-                  });
-                }
-              },
+            ),
+            new Container(
+              child: new Padding(
+                padding: const EdgeInsets.all(28.0),
+                child: new Center(
+                  child: new Form(
+                    //key: formKey,
+                    child: new Center(
+                      child: new ListView(
+                        shrinkWrap: true,
+                        children: <Widget>[
+                          new TextFormField(
+                            decoration: new InputDecoration(labelText: "Login"),
+                            validator: (value) =>
+                            value.length < 4 || value.length > 20
+                                ? "Login is incorrect"
+                                : null,
+                            initialValue: this._username ?? "",
+                            autovalidate: true,
+                            onSaved: (String value) => this._username = value,
+                          ),
+                          new TextFormField(
+                            decoration: new InputDecoration(
+                                labelText: "Password"),
+                            validator: (value) =>
+                            value.length <= 4 ? "Password too short" : null,
+                            autovalidate: true,
+                            obscureText: true,
+                            onSaved: (String value) =>
+                            _password =
+                                sha256.convert(utf8.encode(value)).toString(),
+                          ),
+                          new Padding(
+                            padding: EdgeInsets.only(top: 20.0),
+                          ),
+                          new RaisedButton(
+                            color: new Color.fromARGB(80, 255, 255, 255),
+
+                            child: new Text("Sign in", style: new TextStyle(
+                                fontWeight: FontWeight.bold)),
+                            onPressed: () {
+                              if (this.formKey.currentState.validate()) {
+                                this.formKey.currentState.save();
+                                App.socketClient
+                                    .tryToAuth(
+                                    username: this._username,
+                                    password: this._password)
+                                    .then((bool status) {
+                                  if (status) {
+                                    this._saveCredentials(
+                                        this._username, this._password);
+                                    Navigator.of(this.context)
+                                        .pushReplacementNamed('/map');
+                                  } else {
+                                    Scaffold.of(this.context).showSnackBar(
+                                        SnackBar(content: Text(
+                                            'Invalid login or password')));
+                                  }
+                                });
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
