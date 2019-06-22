@@ -246,7 +246,7 @@ class _MapPageStateNew extends State<MapPage> {
       layers: [
         new TileLayerOptions(
           urlTemplate:
-              "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
+          "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
           additionalOptions: {
             'accessToken': MAP_TOKEN,
             'id': 'mapbox.streets',
@@ -285,7 +285,7 @@ class _MapPageStateNew extends State<MapPage> {
     this
         .geo
         .getPositionStream(LocationOptions(
-            accuracy: LocationAccuracy.best, distanceFilter: 10))
+        accuracy: LocationAccuracy.best, distanceFilter: 10))
         .listen(this._registerPosition);
 
     this
@@ -311,22 +311,22 @@ class _MapPageStateNew extends State<MapPage> {
     List<Future> futures = [];
     futures.add(
         App.socketClient.geopointGetMyCoords().then((ServerResponse response1) {
-      final myCoords = response1.data;
-      print(myCoords.toString());
+          final myCoords = response1.data;
+          print(myCoords.toString());
 
-      if (myCoords.length > 0) {
-        this._myPositions.clear();
-      }
-      myCoords.forEach((var datum) {
-        CircleMarker marker = _MapPageStateNew.transformPosition(
-            lat: datum['lat'] as double,
-            lon: datum['lon'] as double,
-            time: datum['time'] as double);
-        if (marker != null) {
-          this._myPositions.add(marker);
-        }
-      });
-    }));
+          if (myCoords.length > 0) {
+            this._myPositions.clear();
+          }
+          myCoords.forEach((var datum) {
+            CircleMarker marker = _MapPageStateNew.transformPosition(
+                lat: datum['lat'] as double,
+                lon: datum['lon'] as double,
+                time: datum['time'] as double);
+            if (marker != null) {
+              this._myPositions.add(marker);
+            }
+          });
+        }));
 
     futures.add(App.socketClient
         .geopointGetFriendsCoords()
@@ -365,11 +365,11 @@ class _MapPageStateNew extends State<MapPage> {
 
   static CircleMarker transformPosition(
       {@required double lat,
-      @required double lon,
-      @required double time,
-      String username}) {
+        @required double lon,
+        @required double time,
+        String username}) {
     username ??= App.socketClient.username;
-    username ??= 'BLANK'; 
+    username ??= 'BLANK';
     List<int> digest = sha1.convert(utf8.encode(username)).bytes;
 
     double lerp = 3;
