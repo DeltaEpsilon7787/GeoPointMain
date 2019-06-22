@@ -68,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
                 padding: const EdgeInsets.all(28.0),
                 child: new Center(
                   child: new Form(
-                    //key: formKey,
+                    key: formKey,
                     child: new Center(
                       child: new ListView(
                         shrinkWrap: true,

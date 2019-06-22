@@ -6,6 +6,7 @@ import 'package:geosquad/components/login_page.dart';
 import 'package:geosquad/components/register_page.dart';
 import 'package:geosquad/components/map_page.dart';
 import 'package:geosquad/components/profile.dart';
+import 'package:geosquad/components/validate_page.dart';
 
 void main() => runApp(App());
 
@@ -37,6 +38,7 @@ class App extends StatelessWidget {
           '/auth': (context) => new RegisterPage(),
           '/map': (context) => new MapPage(),
           '/profile': (context) => new Profile(),
+          '/validate': (context) => new ValidatePage(),
         });
   }
 }

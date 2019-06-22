@@ -18,7 +18,6 @@ class _RegisterPageState extends State<RegisterPage> {
   String _username;
   String _email;
   String _password;
-  String _key;
 
   void initState() {
     super.initState();
@@ -117,46 +116,17 @@ class _RegisterPageState extends State<RegisterPage> {
                       this.formKey.currentState.save();
                       App.socketClient.attemptRegister(this._username, this._password, this._email).then(
                           (ServerResponse response) {
-                            return new Container(
-                              padding: new EdgeInsets.all(20.0),
-                              child: new SingleChildScrollView(
-                                child: new Column(
-                                  children: <Widget>[
-                                    new TextFormField(
-                                      decoration: new InputDecoration(labelText: "Enter a key"),
-                                      onSaved: (String value) =>
-                                        this._key = value,
-                                    ),
-                                    new Padding(padding: EdgeInsets.all(5.0)),
-                                    new RaisedButton(
-                                      color: new Color(0xff75bbfd),
-                                      child: new Text(
-                                        "Confirm",
-                                      ),
-                                      onPressed: () {
-                                        App.socketClient.attemptActivation(this._key).then(
-                                            (ServerResponse response) {
-                                              Navigator.of(this.context)
-                                                  .pushReplacementNamed('/login');
-                                            },
-                                         onError: (ServerResponse response) {
-                                           Scaffold.of(this.context).showSnackBar(
-                                             SnackBar(content: Text(
-                                                 'Invalid login or password')
-                                             ),
-                                           );
-                                         }
-                                        );
-                                      },
-                                    ),
-                                  ],
+                            if (response.code == "GENERIC_SUCCESS"){
+                              Navigator.of(this.context)
+                                  .pushReplacementNamed('/validate');
+                            }
+                            else {
+                              Scaffold.of(this.context).showSnackBar(
+                                SnackBar(content: Text(
+                                    'Invalid key')
                                 ),
-                              ),
-                            );
-                          },
-                          onError: (ServerResponse response) {
-                            Scaffold.of(context).showSnackBar(new SnackBar(
-                                content: Text(response.data)));
+                              );
+                            }
                           },
                       );
                     }
