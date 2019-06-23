@@ -89,15 +89,14 @@ class _HomeState extends State<Home> {
           return new Center(child: CircularProgressIndicator());
         case APP_STATE.FIRST_CONNECTION_FAILED:
           return new Dialog(
-            child: Column(
+              child: Column(
             children: <Widget>[
               Text('We were unable to connect to GeoPoint server'),
               RaisedButton(
                   child: Text('OK'),
                   onPressed: () {
                     exit(0);
-                  }
-               )
+                  })
             ],
           ));
         case APP_STATE.AUTO_LOGIN_SUCCESS:

@@ -38,13 +38,14 @@ class _RegisterPageState extends State<RegisterPage> {
           children: <Widget>[
             new Text("Have account?"),
             new FlatButton(
-              padding: EdgeInsets.only(
-                  left: 2.0, top: 0.0, right: 0.0, bottom: 0.0),
-              child: new Text("Sign in now",
-                style: new TextStyle(fontWeight: FontWeight.bold),),
+              padding:
+                  EdgeInsets.only(left: 2.0, top: 0.0, right: 0.0, bottom: 0.0),
+              child: new Text(
+                "Sign in now",
+                style: new TextStyle(fontWeight: FontWeight.bold),
+              ),
               onPressed: () {
-                Navigator.of(this.context)
-                    .pushReplacementNamed('/login');
+                Navigator.of(this.context).pushReplacementNamed('/login');
               },
               splashColor: Colors.white,
               highlightColor: Colors.white,
@@ -64,10 +65,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     "CATFISH-GEO",
                     textAlign: TextAlign.center,
                     style: new TextStyle(
-                      fontSize: MediaQuery
-                          .of(context)
-                          .size
-                          .height * 0.07,
+                      fontSize: MediaQuery.of(context).size.height * 0.07,
                       fontWeight: FontWeight.bold,
                       fontStyle: FontStyle.italic,
                       fontFamily: 'Times new roman',
@@ -76,30 +74,33 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 new TextFormField(
                   decoration: new InputDecoration(labelText: "Login"),
-                  validator: (value) => value.length < 4 || value.length > 20 ? "Login is incorrect" : null,
+                  validator: (value) => value.length < 4 || value.length > 20
+                      ? "Login is incorrect"
+                      : null,
                   autovalidate: true,
-                  onSaved: (String value) =>
-                      this._username = value,
+                  onSaved: (String value) => this._username = value,
                 ),
                 new TextFormField(
                   decoration: new InputDecoration(labelText: "E-mail"),
                   validator: validateEmail,
                   autovalidate: true,
-                  onSaved: (String value) =>
-                      this._email = value,
+                  onSaved: (String value) => this._email = value,
                 ),
                 new TextFormField(
                   controller: _passController,
                   decoration: new InputDecoration(labelText: "Password"),
-                  validator: (value) => value.length < 4 ? "Password too short" : null,
+                  validator: (value) =>
+                      value.length < 4 ? "Password too short" : null,
                   obscureText: true,
                   autovalidate: true,
-                  onSaved: (String value) =>
-                      this._password = sha256.convert(utf8.encode(value)).toString(),
+                  onSaved: (String value) => this._password =
+                      sha256.convert(utf8.encode(value)).toString(),
                 ),
                 new TextFormField(
                   decoration: new InputDecoration(labelText: "Repeat password"),
-                  validator: (value) => value != _passController.text ? "Incorrect password" : null,
+                  validator: (value) => value != _passController.text
+                      ? "Password do not match"
+                      : null,
                   obscureText: true,
                   autovalidate: true,
                 ),
@@ -109,37 +110,43 @@ class _RegisterPageState extends State<RegisterPage> {
                 new RaisedButton(
                   color: new Color(0xff75bbfd),
                   child: new Text(
-                    "Registrate",
+                    "Register",
                   ),
                   onPressed: () {
                     if (this.formKey.currentState.validate()) {
                       this.formKey.currentState.save();
-                      App.socketClient.attemptRegister(this._username, this._password, this._email).then(
-                          (ServerResponse response) {
-                            if (response.code == "GENERIC_SUCCESS"){
-                              Navigator.of(this.context)
-                                  .pushReplacementNamed('/validate');
-                            }
-                            else {
-                              return showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return new AlertDialog(
-                                    title: new Text("An error occurred", style: new TextStyle(fontWeight: FontWeight.bold)),
-                                    content: new Text(response.code),
-                                    actions: <Widget>[
-                                      new FlatButton(
-                                        child: new Text('OK'),
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            }
-                          },
+                      setState(() => this._waitingForResponse = true);
+                      App.socketClient
+                          .attemptRegister(
+                              this._username, this._password, this._email)
+                          .then(
+                        (ServerResponse response) {
+                          setState(() => this._waitingForResponse = false);
+                          if (response.status) {
+                            Navigator.of(this.context)
+                                .pushReplacementNamed('/validate');
+                          } else {
+                            return showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return new AlertDialog(
+                                  title: new Text("An error occurred",
+                                      style: new TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                  content: new Text(response.code),
+                                  actions: <Widget>[
+                                    new FlatButton(
+                                      child: new Text('OK'),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
+                        },
                       );
                     }
                   },
@@ -154,7 +161,8 @@ class _RegisterPageState extends State<RegisterPage> {
 }
 
 String validateEmail(String value) {
-  Pattern pattern = r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
+  Pattern pattern =
+      r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
   RegExp regex = new RegExp(pattern);
   if (!regex.hasMatch(value))
     return "Enter Valid Email";
