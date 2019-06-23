@@ -38,12 +38,11 @@ class _ValidatePageState extends State<ValidatePage> {
                       App.socketClient
                           .attemptActivation(this._key)
                           .then((ServerResponse response) {
-                        if (response.code == "GENERIC_SUCCESS") {
+                        if (response.status) {
                           Navigator.of(this.context)
                               .pushReplacementNamed('/login');
-                        }
-                        else {
-                          return showDialog(
+                        } else {
+                            showDialog(
                             context: context,
                             builder: (BuildContext context) {
                               return new AlertDialog(

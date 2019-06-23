@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../main.dart';
 import 'dart:convert';
@@ -19,6 +21,13 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     if (App.socketClient.acquiringSession) {
+      // Could've used a stream for session status, but meh
+      Timer.periodic(Duration(milliseconds: 100), (Timer that) {
+        if (!App.socketClient.acquiringSession) {
+          that.cancel();
+          setState(() {});
+        }
+      });
       return new Center(child: CircularProgressIndicator());
     }
 
