@@ -18,7 +18,6 @@ class _RegisterPageState extends State<RegisterPage> {
   String _username;
   String _email;
   String _password;
-  String _key;
 
   void initState() {
     super.initState();
@@ -117,46 +116,29 @@ class _RegisterPageState extends State<RegisterPage> {
                       this.formKey.currentState.save();
                       App.socketClient.attemptRegister(this._username, this._password, this._email).then(
                           (ServerResponse response) {
-                            return new Container(
-                              padding: new EdgeInsets.all(20.0),
-                              child: new SingleChildScrollView(
-                                child: new Column(
-                                  children: <Widget>[
-                                    new TextFormField(
-                                      decoration: new InputDecoration(labelText: "Enter a key"),
-                                      onSaved: (String value) =>
-                                        this._key = value,
-                                    ),
-                                    new Padding(padding: EdgeInsets.all(5.0)),
-                                    new RaisedButton(
-                                      color: new Color(0xff75bbfd),
-                                      child: new Text(
-                                        "Confirm",
+                            if (response.code == "GENERIC_SUCCESS"){
+                              Navigator.of(this.context)
+                                  .pushReplacementNamed('/validate');
+                            }
+                            else {
+                              return showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return new AlertDialog(
+                                    title: new Text("An error occurred", style: new TextStyle(fontWeight: FontWeight.bold)),
+                                    content: new Text(response.code),
+                                    actions: <Widget>[
+                                      new FlatButton(
+                                        child: new Text('OK'),
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
                                       ),
-                                      onPressed: () {
-                                        App.socketClient.attemptActivation(this._key).then(
-                                            (ServerResponse response) {
-                                              Navigator.of(this.context)
-                                                  .pushReplacementNamed('/login');
-                                            },
-                                         onError: (ServerResponse response) {
-                                           Scaffold.of(this.context).showSnackBar(
-                                             SnackBar(content: Text(
-                                                 'Invalid login or password')
-                                             ),
-                                           );
-                                         }
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                          onError: (ServerResponse response) {
-                            Scaffold.of(context).showSnackBar(new SnackBar(
-                                content: Text(response.data)));
+                                    ],
+                                  );
+                                },
+                              );
+                            }
                           },
                       );
                     }
