@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'friends.dart';
-import 'home.dart';
-import 'settings.dart';
+import 'package:geosquad/components/friends.dart';
+import 'package:geosquad/components/home.dart';
+import 'package:geosquad/components/settings.dart';
 
 class Profile extends StatefulWidget {
   @override
@@ -10,8 +10,8 @@ class Profile extends StatefulWidget {
 
 int _selectedIndex = 1;
 List<Widget> _widgetList = <Widget>[
-  new Friends(),
-  new Home(),
+  new FriendsPage(),
+  new HomePage(),
   new Settings(),
 ];
 
@@ -21,7 +21,10 @@ class _Profile extends State<Profile> {
     return new Scaffold(
       appBar: new AppBar(
         leading: new IconButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.of(this.context)
+                .pushReplacementNamed('/map');
+          },
           icon: new Icon(Icons.arrow_back_ios, color: Colors.black,),
         ),
         title: new Text(

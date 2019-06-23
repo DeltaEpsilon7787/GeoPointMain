@@ -240,34 +240,55 @@ class _MapPageStateNew extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-    return FlutterMap(
-      mapController: _mapController,
-      options: _mapOptions,
-      layers: [
-        new TileLayerOptions(
-          urlTemplate:
-              "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
-          additionalOptions: {
-            'accessToken': MAP_TOKEN,
-            'id': 'mapbox.streets',
+    return new Scaffold(
+      appBar: new AppBar(
+        backgroundColor: Colors.white,
+        centerTitle: true,
+        title: new Text(
+          "CATFISH-GEO",
+          style: new TextStyle(
+            fontWeight: FontWeight.bold,
+            fontStyle: FontStyle.italic,
+            color: Colors.black,
+          ),
+        ),
+        leading: new IconButton(
+          icon: new Icon(Icons.home, color: Colors.black,),
+          onPressed: () {
+            Navigator.of(this.context)
+                .pushReplacementNamed('/profile');
           },
         ),
-        new PolylineLayerOptions(
-          polylines: [
-            new Polyline(
-              points: _polyline,
-              strokeWidth: 10.0,
-              color: Color.fromRGBO(0, 179, 253, 0.8),
-            ),
-          ],
-        ),
-        // Big red stationary radius while in stationary state.
-        new CircleLayerOptions(
-            circles:
-                this._myPositions.length > 0 ? [this._myPositions.last] : []),
-        // Recorded locations.
-        new CircleLayerOptions(circles: this._myPositions)
-      ],
+      ),
+      body: new FlutterMap(
+        mapController: _mapController,
+        options: _mapOptions,
+        layers: [
+          new TileLayerOptions(
+            urlTemplate:
+            "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
+            additionalOptions: {
+              'accessToken': MAP_TOKEN,
+              'id': 'mapbox.streets',
+            },
+          ),
+          new PolylineLayerOptions(
+            polylines: [
+              new Polyline(
+                points: _polyline,
+                strokeWidth: 10.0,
+                color: Color.fromRGBO(0, 179, 253, 0.8),
+              ),
+            ],
+          ),
+          // Big red stationary radius while in stationary state.
+          new CircleLayerOptions(
+              circles:
+              this._myPositions.length > 0 ? [this._myPositions.last] : []),
+          // Recorded locations.
+          new CircleLayerOptions(circles: this._myPositions)
+        ],
+      ),
     );
   }
 

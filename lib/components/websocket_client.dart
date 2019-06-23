@@ -42,6 +42,7 @@ class WebsocketClient {
   final Stopwatch timer = Stopwatch()..start();
 
   String username;
+  String email;
 
   WebsocketClient() {
     this._establishServerOffset();

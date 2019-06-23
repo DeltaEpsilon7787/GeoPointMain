@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class Friends extends StatefulWidget{
+class FriendsPage extends StatefulWidget{
   @override
-  _Friends createState() => new _Friends();
+  _FriendsPage createState() => new _FriendsPage();
 }
 
-class _Friends extends State<Friends> {
+class _FriendsPage extends State<FriendsPage> {
   @override
   Widget build(BuildContext context) {
     return new Container(

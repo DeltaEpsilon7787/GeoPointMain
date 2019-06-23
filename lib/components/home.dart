@@ -1,11 +1,25 @@
 import 'package:flutter/material.dart';
+import '../main.dart';
 
-class Home extends StatefulWidget{
+class HomePage extends StatefulWidget{
   @override
-  _Home createState() => new _Home();
+  _HomePage createState() => new _HomePage();
 }
 
-class _Home extends State<Home> {
+class _HomePage extends State<HomePage> {
+
+  String _username;
+  String _mail;
+  String _speed;
+  String _distance;
+
+  void initState(){
+    super.initState();
+
+    this._username = App.socketClient.username;
+    this._mail = App.socketClient.email;
+  }
+
   @override
   Widget build(BuildContext context) {
     return new Container(
@@ -42,7 +56,7 @@ class _Home extends State<Home> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 new Text(
-                  "barsik@gmail.com",
+                  '$_mail',
                   style: new TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16.0,
@@ -81,7 +95,7 @@ class _Home extends State<Home> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 new Text("NICKNAME", style: new TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
-                new Text("Barsik"),
+                new Text("$_username"),
               ],
             ),
           ),
