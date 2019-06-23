@@ -56,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
                   fontSize: MediaQuery
                       .of(context)
                       .size
-                      .height * 0.07,
+                      .height * 0.05,
                   fontWeight: FontWeight.bold,
                   fontStyle: FontStyle.italic,
                   fontFamily: 'Times new roman',
@@ -68,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
                 padding: const EdgeInsets.all(28.0),
                 child: new Center(
                   child: new Form(
-                    //key: formKey,
+                    key: formKey,
                     child: new Center(
                       child: new ListView(
                         shrinkWrap: true,
