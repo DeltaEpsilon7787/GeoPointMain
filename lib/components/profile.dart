@@ -10,7 +10,7 @@ class Profile extends StatefulWidget {
 
 int _selectedIndex = 1;
 List<Widget> _widgetList = <Widget>[
-  new Friends(),
+  new FriendsPage(),
   new Home(),
   new Settings(),
 ];
