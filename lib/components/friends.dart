@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../main.dart';
+import 'websocket_client.dart';
 
 class FriendsPage extends StatefulWidget{
   @override
@@ -6,6 +8,20 @@ class FriendsPage extends StatefulWidget{
 }
 
 class _FriendsPage extends State<FriendsPage> {
+
+  List list = new List();
+
+  void initState() {
+    super.initState();
+
+    App.socketClient.getMyFriends().then(
+        (ServerResponse response) {
+            this.list = response.data;
+        }
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return new Container(

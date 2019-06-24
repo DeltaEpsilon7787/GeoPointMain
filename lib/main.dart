@@ -102,7 +102,7 @@ class _HomeState extends State<Home> {
         case APP_STATE.AUTO_LOGIN_SUCCESS:
           return new MapPage();
         case APP_STATE.AUTO_LOGIN_FAILED:
-          return new Profile();
+          return new LoginPage();
       }
     }());
   }
