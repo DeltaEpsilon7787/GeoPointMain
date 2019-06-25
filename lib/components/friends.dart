@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../main.dart';
 import 'package:geosquad/components/websocket_client.dart';
@@ -9,7 +11,7 @@ class FriendsPage extends StatefulWidget {
 
 class FriendsState extends State<FriendsPage> {
   Future<List<String>> _listFriends() async {
-    App.socketClient.getMyFriends().then((ServerResponse response){
+    return App.socketClient.getMyFriends().then((ServerResponse response) {
       return response.data as List<String>;
     });
   }
@@ -22,11 +24,11 @@ class FriendsState extends State<FriendsPage> {
           initialData: new Center(child: CircularProgressIndicator()),
           future: _listFriends(),
           builder: (context, snapshot) {
-            if (snapshot.data != null) {
+            if (snapshot.hasData) {
               return new Container(
                 child: new ListView.builder(
                   shrinkWrap: true,
-                  itemCount: snapshot.data.lenght,
+                  itemCount: snapshot.data.length,
                   itemBuilder: (context, index) {
                     return new ListTile(
                       leading: new CircleAvatar(
@@ -36,7 +38,8 @@ class FriendsState extends State<FriendsPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           new Text(snapshot.data[index],
-                              style: new TextStyle(fontWeight: FontWeight.bold)),
+                              style:
+                                  new TextStyle(fontWeight: FontWeight.bold)),
                           new Row(
                             children: <Widget>[
                               new CircleAvatar(
