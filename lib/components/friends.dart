@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import '../main.dart';
 import 'package:geosquad/components/websocket_client.dart';
+
+import '../main.dart';
 
 class FriendsPage extends StatefulWidget {
   @override
@@ -9,15 +12,6 @@ class FriendsPage extends StatefulWidget {
 
 class FriendsState extends State<FriendsPage> {
   final _addFriend = TextEditingController();
-
-  Future<List> _listFriends() async {
-    return WebsocketClient.of(context)
-        .socketClient
-        .getMyFriends()
-        .then((ServerResponse response) {
-      return response.data as List;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,5 +173,14 @@ class FriendsState extends State<FriendsPage> {
                 });
           }),
     );
+  }
+
+  Future<List> _listFriends() async {
+    return WebsocketClient.of(context)
+        .socketClient
+        .getMyFriends()
+        .then((ServerResponse response) {
+      return response.data as List;
+    });
   }
 }
