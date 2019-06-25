@@ -16,7 +16,9 @@ class FriendsState extends State<FriendsPage> {
     super.initState();
 
     App.socketClient.getMyFriends().then((ServerResponse response) {
-      this._listFriends = response.data as List<String>;
+      setState(() {
+        this._listFriends = response.data as List<String>;
+      });
     });
   }
 
@@ -30,7 +32,7 @@ class FriendsState extends State<FriendsPage> {
       body: new ListView.builder(
           shrinkWrap: true,
           padding: const EdgeInsets.all(0.0),
-          itemCount: _listFriends.length,
+          itemCount: (_listFriends ?? []).length,
           itemBuilder: (context, index) {
             return new ListTile(
               leading: new CircleAvatar(
