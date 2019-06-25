@@ -2,138 +2,63 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:geosquad/components/websocket_client.dart';
+import 'package:geosquad/components/friends_list.dart';
+import 'package:geosquad/components/friends_request.dart';
 
 import '../main.dart';
-
-GlobalKey friendKey = GlobalKey();
 
 class FriendsPage extends StatefulWidget {
   @override
   FriendsState createState() => new FriendsState();
 }
 
-class FriendsState extends State<FriendsPage> {
+class FriendsState extends State<FriendsPage> with SingleTickerProviderStateMixin{
   final _addFriend = TextEditingController();
+  TabController _tabController;
+
+  @override
+  void initState(){
+    super.initState();
+    _tabController = new TabController(vsync: this, initialIndex: 0, length: 2);
+  }
 
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      body: new WebsocketFriendChangeListener(
-          context: context,
-          child: SingleChildScrollView(
-            child: FutureBuilder<List>(
-                future: _listFriends(),
-                builder: (context, snapshot) {
-                  switch (snapshot.connectionState) {
-                    case ConnectionState.waiting:
-                      return new Container(
-                        child: new Center(
-                          child: new Text("LOADING..."),
-                        ),
-                      );
-
-                    case ConnectionState.active:
-                      return new Container(
-                        child: new Center(
-                          child: new Text("ACTIVE"),
-                        ),
-                      );
-
-                    case ConnectionState.none:
-                      return new Container(
-                        child: new Center(
-                          child: new Text("NONE"),
-                        ),
-                      );
-
-                    case ConnectionState.done:
-                      if (snapshot.hasError) {
-                        return new Container(
-                          child: new Center(
-                            child: new Text("ERROR"),
-                          ),
-                        );
-                      } else {
-                        return new Container(
-                          child: new ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: snapshot.data.length,
-                            itemBuilder: (context, index) {
-                              return new ListTile(
-                                leading: new CircleAvatar(
-                                  backgroundColor: Colors.blue,
-                                ),
-                                title: new Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: <Widget>[
-                                    new Text(snapshot.data[index],
-                                        style: new TextStyle(
-                                            fontWeight: FontWeight.bold)),
-                                    new Row(
-                                      children: <Widget>[
-                                        new CircleAvatar(
-                                          backgroundColor: Colors.yellow,
-                                        ),
-                                        new Padding(
-                                          padding: EdgeInsets.only(left: 15.0),
-                                        ),
-                                        new IconButton(
-                                          icon: new Icon(Icons.block),
-                                          onPressed: () {
-                                            return showDialog(
-                                                context: context,
-                                                builder:
-                                                    (BuildContext context) {
-                                                  return new AlertDialog(
-                                                    title: new Text(
-                                                        "Delet friend",
-                                                        style: new TextStyle(
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold)),
-                                                    content: new Text(
-                                                        "Are you sure you want to remove ${snapshot.data[index]} from your friends?"),
-                                                    actions: <Widget>[
-                                                      new FlatButton(
-                                                        child: new Text("Yes"),
-                                                        onPressed: () {
-                                                          WebsocketClient.of(
-                                                                  context)
-                                                              .deleteFriend(
-                                                                  snapshot.data[
-                                                                      index]);
-                                                          Navigator.of(context)
-                                                              .pop();
-                                                        },
-                                                      ),
-                                                      new FlatButton(
-                                                        child:
-                                                            new Text("Cancel"),
-                                                        onPressed: () {
-                                                          Navigator.of(context)
-                                                              .pop();
-                                                        },
-                                                      ),
-                                                    ],
-                                                  );
-                                                });
-                                          },
-                                          iconSize: 32.0,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                subtitle: new Text("huy"),
-                              );
-                            },
-                          ),
-                        );
-                      }
-                  }
-                }),
-          )),
+      appBar: new AppBar(
+        leading: new IconButton(
+          onPressed: () {
+            Navigator.of(this.context)
+                .pushReplacementNamed('/map');
+          },
+          icon: new Icon(Icons.arrow_back_ios, color: Colors.black,),
+        ),
+        title: new Text(
+          "Friends",
+          style: new TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        bottom: new TabBar(
+          controller: _tabController,
+          labelColor: Colors.black,
+          indicatorColor: Colors.black,
+          tabs: <Widget>[
+            new Tab(text: "Friends"),
+            new Tab(text: "Friend requests")
+          ],
+        ),
+      ),
+      body: new TabBarView(
+        controller: _tabController,
+        children: <Widget>[
+          new FriendsListPage(),
+          new FriendsRequestPage(),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
           child: Icon(Icons.person_add),
           backgroundColor: Colors.green,

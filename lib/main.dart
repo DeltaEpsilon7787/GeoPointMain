@@ -121,14 +121,13 @@ class _WebsocketFriendChangeListenerState
   @override
   Widget build(BuildContext context) {
     return WebsocketBasicServerWhines(
-        context: this.widget.context,
-        child: Builder(builder: (context) => this.widget.child));
+        context: this.widget.context, child: this.widget.child);
   }
 
   void _processServerBroadcast(ServerResponse broadcast) {
     switch (broadcast.code) {
       case 'FRIEND_LIST_CHANGED':
-        setState(() {});
+        if (this.mounted) setState(() {});
         break;
     }
   }

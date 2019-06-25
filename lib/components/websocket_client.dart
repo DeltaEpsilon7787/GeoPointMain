@@ -49,9 +49,6 @@ class WebsocketService {
   double get ourTime =>
       (this.timer.elapsed + this.serverTimeOffset).inMicroseconds / 10e6;
 
-  Future<ServerResponse> acceptFriendRequest(String target) async =>
-      this._sendMessage('accept_friend_request', data: {'target': target});
-
   Future<ServerResponse> attemptActivation(String key) async =>
       this._sendMessage('activate', data: {'key': key}, authorized: false);
 
@@ -60,12 +57,6 @@ class WebsocketService {
       this._sendMessage('register',
           data: {'username': username, 'password': password, 'email': email},
           authorized: false);
-
-  Future<ServerResponse> declineFriendRequest(String target) async =>
-      this._sendMessage('decline_friend_request', data: {'target': target});
-
-  Future<ServerResponse> deleteFriend(String username) async =>
-      this._sendMessage('delete_friend', data: {'target': username});
 
   Future<bool> establishGuestSession() async {
     if (this._guestChannel != null) {
@@ -92,6 +83,18 @@ class WebsocketService {
           return result;
         });
   }
+
+  Future<ServerResponse> getFriendRequests() async =>
+      this._sendMessage('get_friend_requests');
+
+  Future<ServerResponse> acceptFriendRequest(String username) async =>
+      this._sendMessage('accept_friend_request', data: {'target': username});
+
+  Future<ServerResponse> declineFriendRequest(String username) async =>
+      this._sendMessage('decline_friend_request', data: {'target': username});
+
+  Future<ServerResponse> deleteFriend(String username) async =>
+      this._sendMessage('delete_friend', data: {'target': username});
 
   Future<ServerResponse> geopointGetFriendsCoords() async =>
       this._sendMessage('geopoint_get_friends');
