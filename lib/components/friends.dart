@@ -9,7 +9,7 @@ class FriendsPage extends StatefulWidget {
 
 class FriendsState extends State<FriendsPage> {
   Future<List<String>> _listFriends() async {
-    App.socketClient.getMyFriends().then((ServerResponse response){
+    return App.socketClient.getMyFriends().then((ServerResponse response) {
       return response.data as List<String>;
     });
   }
@@ -19,49 +19,79 @@ class FriendsState extends State<FriendsPage> {
     return new Scaffold(
       body: new SingleChildScrollView(
         child: FutureBuilder(
-          initialData: new Center(child: CircularProgressIndicator()),
-          future: _listFriends(),
-          builder: (context, snapshot) {
-            if (snapshot.data != null) {
-              return new Container(
-                child: new ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: snapshot.data.lenght,
-                  itemBuilder: (context, index) {
-                    return new ListTile(
-                      leading: new CircleAvatar(
-                        backgroundColor: Colors.blue,
+            initialData: new Center(child: CircularProgressIndicator()),
+            future: _listFriends(),
+            builder: (context, snapshot) {
+              switch (snapshot.connectionState) {
+                case ConnectionState.waiting:
+                  return new Container(
+                    child: new Center(
+                      child: new Text("LOADING..."),
+                    ),
+                  );
+
+                case ConnectionState.active:
+                  return new Container(
+                    child: new Center(
+                      child: new Text("ACTIVE"),
+                    ),
+                  );
+
+                case ConnectionState.none:
+                  return new Container(
+                    child: new Center(
+                      child: new Text("NONE"),
+                    ),
+                  );
+
+                case ConnectionState.done:
+                  if (snapshot.error) {
+                    return new Container(
+                      child: new Center(
+                        child: new Text("ERROR"),
                       ),
-                      title: new Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          new Text(snapshot.data[index],
-                              style: new TextStyle(fontWeight: FontWeight.bold)),
-                          new Row(
-                            children: <Widget>[
-                              new CircleAvatar(
-                                backgroundColor: Colors.yellow,
-                              ),
-                              new Padding(
-                                padding: EdgeInsets.only(left: 15.0),
-                              ),
-                              new IconButton(
-                                icon: new Icon(Icons.block),
-                                onPressed: () {},
-                                iconSize: 32.0,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      subtitle: new Text("huy"),
                     );
-                  },
-                ),
-              );
-            }
-          },
-        ),
+                  } else {
+                    return new Container(
+                      child: new ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: snapshot.data.length,
+                        itemBuilder: (context, index) {
+                          return new ListTile(
+                            leading: new CircleAvatar(
+                              backgroundColor: Colors.blue,
+                            ),
+                            title: new Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                new Text(snapshot.data[index],
+                                    style: new TextStyle(
+                                        fontWeight: FontWeight.bold)),
+                                new Row(
+                                  children: <Widget>[
+                                    new CircleAvatar(
+                                      backgroundColor: Colors.yellow,
+                                    ),
+                                    new Padding(
+                                      padding: EdgeInsets.only(left: 15.0),
+                                    ),
+                                    new IconButton(
+                                      icon: new Icon(Icons.block),
+                                      onPressed: () {},
+                                      iconSize: 32.0,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            subtitle: new Text("huy"),
+                          );
+                        },
+                      ),
+                    );
+                  }
+              }
+            }),
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.person_add),
