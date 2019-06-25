@@ -84,6 +84,15 @@ class WebsocketService {
         });
   }
 
+  Future<ServerResponse> getFriendRequests() async =>
+      this._sendMessage('get_friend_requests');
+
+  Future<ServerResponse> acceptFriendRequest(String username) async =>
+      this._sendMessage('accept_friend_request', data: {'target': username});
+
+  Future<ServerResponse> declineFriendRequest(String username) async =>
+      this._sendMessage('decline_friend_request', data: {'target': username});
+
   Future<ServerResponse> deleteFriend(String username) async =>
       this._sendMessage('delete_friend', data: {'target': username});
   

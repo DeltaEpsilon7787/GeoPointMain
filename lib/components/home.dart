@@ -21,8 +21,26 @@ class _HomePage extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return new Container(
-      child: new ListView(
+    return new Scaffold(
+      appBar: new AppBar(
+        leading: new IconButton(
+          onPressed: () {
+            Navigator.of(this.context)
+                .pushReplacementNamed('/map');
+          },
+          icon: new Icon(Icons.arrow_back_ios, color: Colors.black,),
+        ),
+        title: new Text(
+          "Profile",
+          style: new TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+      ),
+      body: new ListView(
         children: <Widget>[
           new Stack(
             //alignment: Alignment.center,
@@ -50,7 +68,7 @@ class _HomePage extends State<HomePage> {
           ),
           new Container(
             padding: EdgeInsets.all(15.0),
-            height: MediaQuery.of(context).size.height * 0.1,
+            height: MediaQuery.of(context).size.height * 0.07,
             child: new Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
@@ -73,6 +91,7 @@ class _HomePage extends State<HomePage> {
                           style: new TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16.0,
+
                           )),
                       new Padding(
                         padding: EdgeInsets.all(2.0),
