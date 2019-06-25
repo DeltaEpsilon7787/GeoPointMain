@@ -109,6 +109,8 @@ class WebsocketClient {
     return this._tryToEstablishSession(username, password);
   }
 
+  void logOut() => this._authorizedChannel != null ? this._authorizedChannel.sink.close() : null;
+
   void _establishServerOffset() async {
     await this._sendMessage('get_time', authorized: false).then(
         (ServerResponse response) => this.serverTimeOffset =
