@@ -253,10 +253,12 @@ class _MapPageStateNew extends State<MapPage> {
           ),
         ),
         leading: new IconButton(
-          icon: new Icon(Icons.home, color: Colors.black,),
+          icon: new Icon(
+            Icons.home,
+            color: Colors.black,
+          ),
           onPressed: () {
-            Navigator.of(this.context)
-                .pushReplacementNamed('/profile');
+            Navigator.of(this.context).pushReplacementNamed('/profile');
           },
         ),
       ),
@@ -266,7 +268,7 @@ class _MapPageStateNew extends State<MapPage> {
         layers: [
           new TileLayerOptions(
             urlTemplate:
-            "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
+                "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
             additionalOptions: {
               'accessToken': MAP_TOKEN,
               'id': 'mapbox.streets',
@@ -284,7 +286,7 @@ class _MapPageStateNew extends State<MapPage> {
           // Big red stationary radius while in stationary state.
           new CircleLayerOptions(
               circles:
-              this._myPositions.length > 0 ? [this._myPositions.last] : []),
+                  this._myPositions.length > 0 ? [this._myPositions.last] : []),
           // Recorded locations.
           new CircleLayerOptions(circles: this._myPositions)
         ],
@@ -310,7 +312,7 @@ class _MapPageStateNew extends State<MapPage> {
         .getPositionStream(LocationOptions(
             accuracy: LocationAccuracy.best, distanceFilter: 10))
         .listen(this._registerPosition);
-    
+
     this._getFirstPosition();
   }
 
@@ -323,15 +325,16 @@ class _MapPageStateNew extends State<MapPage> {
 
   void _registerPosition(Position position) async {
     print('Register Position');
-    this._myPositions.add(_MapPageStateNew.transformPosition(
+    this._myPositions.add(this.transformPosition(
         lat: position.latitude,
         lon: position.longitude,
-        time: App.socketClient.ourTime));
+        time: WebsocketClient.of(context).socketClient.ourTime));
     this._mapOptions.center = LatLng(position.latitude, position.longitude);
     this._mapOptions.crs.scale(_mapController.zoom);
 
     setState(() {});
-    await App.socketClient
+    await WebsocketClient.of(context)
+        .socketClient
         .geopointPostCoords(position.latitude, position.longitude);
   }
 
@@ -339,8 +342,10 @@ class _MapPageStateNew extends State<MapPage> {
     return;
 
     List<Future> futures = [];
-    futures.add(
-        App.socketClient.geopointGetMyCoords().then((ServerResponse response1) {
+    futures.add(WebsocketClient.of(context)
+        .socketClient
+        .geopointGetMyCoords()
+        .then((ServerResponse response1) {
       final myCoords = response1.data as List<Map<String, double>>;
       print(myCoords.toString());
 
@@ -348,17 +353,16 @@ class _MapPageStateNew extends State<MapPage> {
         this._myPositions.clear();
       }
       myCoords.forEach((var datum) {
-        CircleMarker marker = _MapPageStateNew.transformPosition(
-            lat: datum['lat'],
-            lon: datum['lon'],
-            time: datum['time']);
+        CircleMarker marker = this.transformPosition(
+            lat: datum['lat'], lon: datum['lon'], time: datum['time']);
         if (marker != null) {
           this._myPositions.add(marker);
         }
       });
     }));
 
-    futures.add(App.socketClient
+    futures.add(WebsocketClient.of(context)
+        .socketClient
         .geopointGetFriendsCoords()
         .then((ServerResponse response2) {
       var friendCoords = [];
@@ -374,7 +378,7 @@ class _MapPageStateNew extends State<MapPage> {
         if (!this._friendPositions.containsKey(datum['friend'])) {
           this._friendPositions[datum['friend']] = [];
         }
-        CircleMarker marker = _MapPageStateNew.transformPosition(
+        CircleMarker marker = this.transformPosition(
             lat: datum['lat'] as double,
             lon: datum['lon'] as double,
             time: datum['time'] as double,
@@ -393,12 +397,12 @@ class _MapPageStateNew extends State<MapPage> {
 
   void _buildPolylines() {}
 
-  static CircleMarker transformPosition(
+  CircleMarker transformPosition(
       {@required double lat,
       @required double lon,
       @required double time,
       String username}) {
-    username ??= App.socketClient.username;
+    username ??= WebsocketClient.of(context).socketClient.username;
     username ??= 'BLANK';
     List<int> digest = sha1.convert(utf8.encode(username)).bytes;
 

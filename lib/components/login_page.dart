@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -20,10 +19,10 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (App.socketClient.acquiringSession) {
+    if (WebsocketClient.of(context).socketClient.acquiringSession) {
       // Could've used a stream for session status, but meh
       Timer.periodic(Duration(milliseconds: 100), (Timer that) {
-        if (!App.socketClient.acquiringSession) {
+        if (!WebsocketClient.of(context).socketClient.acquiringSession) {
           that.cancel();
           setState(() {});
         }
@@ -39,13 +38,14 @@ class _LoginPageState extends State<LoginPage> {
           children: <Widget>[
             new Text("No account?"),
             new FlatButton(
-              padding: EdgeInsets.only(
-                  left: 2.0, top: 0.0, right: 0.0, bottom: 0.0),
-              child: new Text("Sign up now",
-                style: new TextStyle(fontWeight: FontWeight.bold),),
+              padding:
+                  EdgeInsets.only(left: 2.0, top: 0.0, right: 0.0, bottom: 0.0),
+              child: new Text(
+                "Sign up now",
+                style: new TextStyle(fontWeight: FontWeight.bold),
+              ),
               onPressed: () {
-                Navigator.of(this.context)
-                    .pushReplacementNamed('/auth');
+                Navigator.of(this.context).pushReplacementNamed('/auth');
               },
               splashColor: Colors.white,
               highlightColor: Colors.white,
@@ -62,10 +62,7 @@ class _LoginPageState extends State<LoginPage> {
                 "CATFISH-GEO",
                 textAlign: TextAlign.center,
                 style: new TextStyle(
-                  fontSize: MediaQuery
-                      .of(context)
-                      .size
-                      .height * 0.05,
+                  fontSize: MediaQuery.of(context).size.height * 0.05,
                   fontWeight: FontWeight.bold,
                   fontStyle: FontStyle.italic,
                   fontFamily: 'Times new roman',
@@ -85,22 +82,21 @@ class _LoginPageState extends State<LoginPage> {
                           new TextFormField(
                             decoration: new InputDecoration(labelText: "Login"),
                             validator: (value) =>
-                            value.length < 4 || value.length > 20
-                                ? "Login is incorrect"
-                                : null,
+                                value.length < 4 || value.length > 20
+                                    ? "Login is incorrect"
+                                    : null,
                             initialValue: this._username ?? "",
                             autovalidate: true,
                             onSaved: (String value) => this._username = value,
                           ),
                           new TextFormField(
-                            decoration: new InputDecoration(
-                                labelText: "Password"),
+                            decoration:
+                                new InputDecoration(labelText: "Password"),
                             validator: (value) =>
-                            value.length <= 4 ? "Password too short" : null,
+                                value.length <= 4 ? "Password too short" : null,
                             autovalidate: true,
                             obscureText: true,
-                            onSaved: (String value) =>
-                            _password =
+                            onSaved: (String value) => _password =
                                 sha256.convert(utf8.encode(value)).toString(),
                           ),
                           new Padding(
@@ -108,16 +104,17 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           new RaisedButton(
                             color: new Color.fromARGB(80, 255, 255, 255),
-
-                            child: new Text("Sign in", style: new TextStyle(
-                                fontWeight: FontWeight.bold)),
+                            child: new Text("Sign in",
+                                style:
+                                    new TextStyle(fontWeight: FontWeight.bold)),
                             onPressed: () {
                               if (this.formKey.currentState.validate()) {
                                 this.formKey.currentState.save();
-                                App.socketClient
+                                WebsocketClient.of(context)
+                                    .socketClient
                                     .tryToAuth(
-                                    username: this._username,
-                                    password: this._password)
+                                        username: this._username,
+                                        password: this._password)
                                     .then((bool status) {
                                   if (status) {
                                     this._saveCredentials(
@@ -132,7 +129,8 @@ class _LoginPageState extends State<LoginPage> {
                                           title: new Text("An error occurred",
                                               style: new TextStyle(
                                                   fontWeight: FontWeight.bold)),
-                                          content: new Text('Invalid login or password'),
+                                          content: new Text(
+                                              'Invalid login or password'),
                                           actions: <Widget>[
                                             new FlatButton(
                                               child: new Text('OK'),

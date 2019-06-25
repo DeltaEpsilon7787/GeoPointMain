@@ -35,14 +35,15 @@ class _ValidatePageState extends State<ValidatePage> {
                   onPressed: () {
                     if (this.formKey.currentState.validate()) {
                       this.formKey.currentState.save();
-                      App.socketClient
+                      WebsocketClient.of(context)
+                          .socketClient
                           .attemptActivation(this._key)
                           .then((ServerResponse response) {
                         if (response.status) {
                           Navigator.of(this.context)
                               .pushReplacementNamed('/login');
                         } else {
-                            showDialog(
+                          showDialog(
                             context: context,
                             builder: (BuildContext context) {
                               return new AlertDialog(
