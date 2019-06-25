@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import '../main.dart';
 import 'package:geosquad/components/websocket_client.dart';
 import 'package:geosquad/components/friends_list.dart';
 import 'package:geosquad/components/friends_request.dart';
+
+import '../main.dart';
 
 class FriendsPage extends StatefulWidget {
   @override
@@ -17,15 +20,6 @@ class FriendsState extends State<FriendsPage> with SingleTickerProviderStateMixi
   void initState(){
     super.initState();
     _tabController = new TabController(vsync: this, initialIndex: 0, length: 2);
-  }
-
-  Future<List> _listFriends() async {
-    return WebsocketClient.of(context)
-        .socketClient
-        .getMyFriends()
-        .then((ServerResponse response) {
-      return response.data as List;
-    });
   }
 
   @override
@@ -147,5 +141,14 @@ class FriendsState extends State<FriendsPage> with SingleTickerProviderStateMixi
                 });
           }),
     );
+  }
+
+  Future<List> _listFriends() async {
+    return WebsocketClient.of(context)
+        .socketClient
+        .getMyFriends()
+        .then((ServerResponse response) {
+      return response.data as List;
+    });
   }
 }
