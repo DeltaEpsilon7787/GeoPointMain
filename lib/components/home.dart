@@ -64,7 +64,9 @@ class _HomePage extends State<HomePage> {
                 ),
                 new FlatButton(
                   padding: EdgeInsets.all(0),
-                  onPressed: () {},
+                  onPressed: () {
+                    App.socketClient.logOut();
+                  },
                   child: new Row(
                     children: <Widget>[
                       new Text( "LOG OUT", style: new TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0,)),
