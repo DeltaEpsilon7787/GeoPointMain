@@ -83,6 +83,9 @@ class WebsocketClient {
         });
   }
 
+  Future<ServerResponse> sendFriendsRequest(String username) async =>
+      this._sendMessage('send_friend_request', data: {'target': username});
+
   Future<ServerResponse> geopointGetFriendsCoords() async =>
       this._sendMessage('geopoint_get_friends');
 
