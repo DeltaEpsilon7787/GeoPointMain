@@ -42,7 +42,7 @@ class _HomePage extends State<HomePage> {
                       ),
                     ),
                     child: new ClipOval(
-                      child: new Image.asset("assets/profile.png"),
+                      child: new Image.asset(""),
                     ),
                   ),
                 ),
