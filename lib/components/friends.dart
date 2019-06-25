@@ -21,8 +21,8 @@ class FriendsState extends State<FriendsPage> {
     return new Scaffold(
       body: new SingleChildScrollView(
         child: FutureBuilder<List>(
-            future: _listFriends(),
-            builder: (context, snapshot) {
+         future: _listFriends(),
+         builder: (context, snapshot) {
               switch (snapshot.connectionState) {
                 case ConnectionState.waiting:
                   return new Container(
@@ -78,7 +78,32 @@ class FriendsState extends State<FriendsPage> {
                                     ),
                                     new IconButton(
                                       icon: new Icon(Icons.block),
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        return showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return new AlertDialog(
+                                              title: new Text("Delet friend", style: new TextStyle(fontWeight: FontWeight.bold)),
+                                              content: new Text("Are you sure you want to remove ${snapshot.data[index]} from your friends?"),
+                                              actions: <Widget>[
+                                                new FlatButton(
+                                                  child: new Text("Yes"),
+                                                  onPressed: () {
+                                                    App.socketClient.deleteFriend(snapshot.data[index]);
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                ),
+                                                new FlatButton(
+                                                  child: new Text("Cancel"),
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                ),
+                                              ],
+                                            );
+                                          }
+                                        );
+                                      },
                                       iconSize: 32.0,
                                     ),
                                   ],
@@ -92,7 +117,8 @@ class FriendsState extends State<FriendsPage> {
                     );
                   }
               }
-            }),
+            }
+         ),
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.person_add),

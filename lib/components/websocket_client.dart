@@ -83,6 +83,9 @@ class WebsocketClient {
         });
   }
 
+  Future<ServerResponse> deleteFriend(String username) async =>
+      this._sendMessage('delete_friend', data: {'target': username});
+
   Future<ServerResponse> sendFriendsRequest(String username) async =>
       this._sendMessage('send_friend_request', data: {'target': username});
 
@@ -112,19 +115,7 @@ class WebsocketClient {
     return this._tryToEstablishSession(username, password);
   }
 
-  void _clearCredentials() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('username', null);
-    await prefs.setString('password', null);
-  }
-
-  void logOut() {
-    if (this._authorizedChannel != null) {
-      this._authorizedChannel.sink.close();
-      this._authorizedChannel = null;
-    }
-    this._clearCredentials();
-  }
+  void logOut() => this._authorizedChannel != null ? this._authorizedChannel.sink.close() : null;
 
   void _establishServerOffset() async {
     await this._sendMessage('get_time', authorized: false).then(
