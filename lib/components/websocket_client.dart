@@ -112,7 +112,19 @@ class WebsocketClient {
     return this._tryToEstablishSession(username, password);
   }
 
-  void logOut() => this._authorizedChannel != null ? this._authorizedChannel.sink.close() : null;
+  void _clearCredentials() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('username', null);
+    await prefs.setString('password', null);
+  }
+
+  void logOut() {
+    if (this._authorizedChannel != null) {
+      this._authorizedChannel.sink.close();
+      this._authorizedChannel = null;
+    }
+    this._clearCredentials();
+  }
 
   void _establishServerOffset() async {
     await this._sendMessage('get_time', authorized: false).then(
