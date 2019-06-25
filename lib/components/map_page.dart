@@ -336,10 +336,12 @@ class _MapPageStateNew extends State<MapPage> {
   }
 
   void _updatePoints() async {
+    return;
+
     List<Future> futures = [];
     futures.add(
         App.socketClient.geopointGetMyCoords().then((ServerResponse response1) {
-      final myCoords = response1.data;
+      final myCoords = response1.data as List<Map<String, double>>;
       print(myCoords.toString());
 
       if (myCoords.length > 0) {
@@ -347,9 +349,9 @@ class _MapPageStateNew extends State<MapPage> {
       }
       myCoords.forEach((var datum) {
         CircleMarker marker = _MapPageStateNew.transformPosition(
-            lat: datum['lat'] as double,
-            lon: datum['lon'] as double,
-            time: datum['time'] as double);
+            lat: datum['lat'],
+            lon: datum['lon'],
+            time: datum['time']);
         if (marker != null) {
           this._myPositions.add(marker);
         }
