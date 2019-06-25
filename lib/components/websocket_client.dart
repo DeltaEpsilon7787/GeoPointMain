@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:core';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/io.dart';
@@ -20,7 +21,7 @@ class ServerResponse {
         data = json['data'];
 }
 
-class WebsocketClient {
+class WebsocketService {
   IOWebSocketChannel _authorizedChannel;
 
   IOWebSocketChannel _guestChannel;
@@ -34,19 +35,19 @@ class WebsocketClient {
       StreamController.broadcast();
 
   Duration serverTimeOffset = Duration.zero;
-  double get ourTime =>
-      (this.timer.elapsed + this.serverTimeOffset).inMicroseconds / 10e6;
-
   bool acquiringSession = false;
 
   final Stopwatch timer = Stopwatch()..start();
 
   String username;
-  String email;
 
-  WebsocketClient() {
+  String email;
+  WebsocketService() {
     this._establishServerOffset();
   }
+
+  double get ourTime =>
+      (this.timer.elapsed + this.serverTimeOffset).inMicroseconds / 10e6;
 
   Future<ServerResponse> attemptActivation(String key) async =>
       this._sendMessage('activate', data: {'key': key}, authorized: false);
@@ -83,9 +84,6 @@ class WebsocketClient {
         });
   }
 
-  Future<ServerResponse> sendFriendsRequest(String username) async =>
-      this._sendMessage('send_friend_request', data: {'target': username});
-
   Future<ServerResponse> geopointGetFriendsCoords() async =>
       this._sendMessage('geopoint_get_friends');
 
@@ -97,6 +95,17 @@ class WebsocketClient {
 
   Future<ServerResponse> getMyFriends() async =>
       this._sendMessage('get_my_friends');
+
+  void logOut() {
+    if (this._authorizedChannel != null) {
+      this._authorizedChannel.sink.close();
+      this._authorizedChannel = null;
+    }
+    this._clearCredentials();
+  }
+
+  Future<ServerResponse> sendFriendsRequest(String username) async =>
+      this._sendMessage('send_friend_request', data: {'target': username});
 
   Future<bool> tryToAuth({String username, String password}) async {
     if (username == null && password == null) {
@@ -116,14 +125,6 @@ class WebsocketClient {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('username', null);
     await prefs.setString('password', null);
-  }
-
-  void logOut() {
-    if (this._authorizedChannel != null) {
-      this._authorizedChannel.sink.close();
-      this._authorizedChannel = null;
-    }
-    this._clearCredentials();
   }
 
   void _establishServerOffset() async {

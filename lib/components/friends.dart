@@ -11,7 +11,10 @@ class FriendsState extends State<FriendsPage> {
   final _addFriend = TextEditingController();
 
   Future<List> _listFriends() async {
-    return App.socketClient.getMyFriends().then((ServerResponse response) {
+    return WebsocketClient.of(context)
+        .socketClient
+        .getMyFriends()
+        .then((ServerResponse response) {
       return response.data as List;
     });
   }
@@ -95,80 +98,86 @@ class FriendsState extends State<FriendsPage> {
             }),
       ),
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.person_add),
-        backgroundColor: Colors.green,
-        onPressed: () {
-          return showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return new AlertDialog(
-                title: new Text("Add to friends", style: new TextStyle(fontWeight: FontWeight.bold)),
-                content: new TextFormField(
-                  controller: _addFriend,
-                  decoration: new InputDecoration(labelText: "Enter friend\'s login"),
-                ),
-                actions: <Widget>[
-                  new FlatButton(
-                    child: new Text('Add'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      App.socketClient.sendFriendsRequest(this._addFriend.text).then(
-                        (ServerResponse response) {
-                          if (response.status) {
-                            return showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return new AlertDialog(
-                                  title: new Text("Add to friends", style: new TextStyle(fontWeight: FontWeight.bold)),
-                                  content: new Text("Request successfully sent"),
-                                  actions: <Widget>[
-                                    new FlatButton(
-                                      child: new Text("OK"),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                    ),
-                                  ],
+          child: Icon(Icons.person_add),
+          backgroundColor: Colors.green,
+          onPressed: () {
+            return showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return new AlertDialog(
+                    title: new Text("Add to friends",
+                        style: new TextStyle(fontWeight: FontWeight.bold)),
+                    content: new TextFormField(
+                      controller: _addFriend,
+                      decoration: new InputDecoration(
+                          labelText: "Enter friend\'s login"),
+                    ),
+                    actions: <Widget>[
+                      new FlatButton(
+                        child: new Text('Add'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          WebsocketClient.of(context)
+                              .socketClient
+                              .sendFriendsRequest(this._addFriend.text)
+                              .then(
+                            (ServerResponse response) {
+                              if (response.status) {
+                                return showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return new AlertDialog(
+                                      title: new Text("Add to friends",
+                                          style: new TextStyle(
+                                              fontWeight: FontWeight.bold)),
+                                      content:
+                                          new Text("Request successfully sent"),
+                                      actions: <Widget>[
+                                        new FlatButton(
+                                          child: new Text("OK"),
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 );
-                              },
-                            );
-                          } else {
-                            return showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return new AlertDialog(
-                                  title: new Text("An error occurred",
-                                      style: new TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  content: new Text(response.code),
-                                  actions: <Widget>[
-                                    new FlatButton(
-                                      child: new Text('OK'),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                    ),
-                                  ],
+                              } else {
+                                return showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return new AlertDialog(
+                                      title: new Text("An error occurred",
+                                          style: new TextStyle(
+                                              fontWeight: FontWeight.bold)),
+                                      content: new Text(response.code),
+                                      actions: <Widget>[
+                                        new FlatButton(
+                                          child: new Text('OK'),
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 );
-                              },
-                            );
-                          }
+                              }
+                            },
+                          );
                         },
-                      );
-                    },
-                  ),
-                  new FlatButton(
-                    child: new Text("Cancel"),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ],
-              );
-            }
-          );
-        }
-      ),
+                      ),
+                      new FlatButton(
+                        child: new Text("Cancel"),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  );
+                });
+          }),
     );
   }
 }
