@@ -84,6 +84,9 @@ class WebsocketService {
         });
   }
 
+  Future<ServerResponse> deleteFriend(String username) async =>
+      this._sendMessage('delete_friend', data: {'target': username});
+  
   Future<ServerResponse> geopointGetFriendsCoords() async =>
       this._sendMessage('geopoint_get_friends');
 
