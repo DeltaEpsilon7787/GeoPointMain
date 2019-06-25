@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
 
-class HomePage extends StatefulWidget{
+class HomePage extends StatefulWidget {
   @override
   _HomePage createState() => new _HomePage();
 }
 
 class _HomePage extends State<HomePage> {
-
   String _username;
   String _mail;
   String _speed;
   String _distance;
 
-  void initState(){
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-    this._username = App.socketClient.username;
-    this._mail = App.socketClient.email;
+    this._username = WebsocketClient.of(context).socketClient.username;
+    this._mail = WebsocketClient.of(context).socketClient.email;
   }
 
   @override
@@ -65,13 +64,23 @@ class _HomePage extends State<HomePage> {
                 new FlatButton(
                   padding: EdgeInsets.all(0),
                   onPressed: () {
-                    App.socketClient.logOut();
+                    WebsocketClient.of(context).socketClient.logOut();
+                    Navigator.of(context).pushReplacementNamed('/login');
                   },
                   child: new Row(
                     children: <Widget>[
-                      new Text( "LOG OUT", style: new TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0,)),
-                      new Padding(padding: EdgeInsets.all(2.0),),
-                      new Icon(Icons.arrow_forward_ios, size: 15.5,),
+                      new Text("LOG OUT",
+                          style: new TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16.0,
+                          )),
+                      new Padding(
+                        padding: EdgeInsets.all(2.0),
+                      ),
+                      new Icon(
+                        Icons.arrow_forward_ios,
+                        size: 15.5,
+                      ),
                     ],
                   ),
                 ),
@@ -85,9 +94,16 @@ class _HomePage extends State<HomePage> {
             color: Colors.black,
             child: new Row(
               children: <Widget>[
-                new Icon(Icons.account_circle, color: Colors.white,),
-                new Padding(padding: EdgeInsets.only(left: 10.0),),
-                new Text("ABOUT ME", style: new TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                new Icon(
+                  Icons.account_circle,
+                  color: Colors.white,
+                ),
+                new Padding(
+                  padding: EdgeInsets.only(left: 10.0),
+                ),
+                new Text("ABOUT ME",
+                    style: new TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white)),
               ],
             ),
           ),
@@ -96,7 +112,9 @@ class _HomePage extends State<HomePage> {
             child: new Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                new Text("NICKNAME", style: new TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
+                new Text("NICKNAME",
+                    style: new TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16.0)),
                 new Text("$_username"),
               ],
             ),
@@ -106,7 +124,9 @@ class _HomePage extends State<HomePage> {
             child: new Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                new Text("AVERAGE SPEED", style: new TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
+                new Text("AVERAGE SPEED",
+                    style: new TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16.0)),
                 new Text("100"),
               ],
             ),
@@ -116,7 +136,9 @@ class _HomePage extends State<HomePage> {
             child: new Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                new Text("DISTANCE TRAVELED", style: new TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
+                new Text("DISTANCE TRAVELED",
+                    style: new TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16.0)),
                 new Text("10000"),
               ],
             ),

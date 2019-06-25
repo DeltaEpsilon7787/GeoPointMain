@@ -92,7 +92,7 @@ class FriendsState extends State<FriendsPage> {
                                                 new FlatButton(
                                                   child: new Text("Yes"),
                                                   onPressed: () {
-                                                    App.socketClient.deleteFriend(snapshot.data[index]);
+                                                    WebsocketClient.of(context).socketClient.deleteFriend(snapshot.data[index]);
                                                     Navigator.of(context).pop();
                                                   },
                                                 ),
