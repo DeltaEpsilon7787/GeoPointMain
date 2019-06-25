@@ -262,35 +262,38 @@ class _MapPageStateNew extends State<MapPage> {
           },
         ),
       ),
-      body: new FlutterMap(
-        mapController: _mapController,
-        options: _mapOptions,
-        layers: [
-          new TileLayerOptions(
-            urlTemplate:
-                "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
-            additionalOptions: {
-              'accessToken': MAP_TOKEN,
-              'id': 'mapbox.streets',
-            },
-          ),
-          new PolylineLayerOptions(
-            polylines: [
-              new Polyline(
-                points: _polyline,
-                strokeWidth: 10.0,
-                color: Color.fromRGBO(0, 179, 253, 0.8),
+      body: new WebsocketBasicServerWhines(
+          context: context,
+          child: FlutterMap(
+            mapController: _mapController,
+            options: _mapOptions,
+            layers: [
+              new TileLayerOptions(
+                urlTemplate:
+                    "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
+                additionalOptions: {
+                  'accessToken': MAP_TOKEN,
+                  'id': 'mapbox.streets',
+                },
               ),
+              new PolylineLayerOptions(
+                polylines: [
+                  new Polyline(
+                    points: _polyline,
+                    strokeWidth: 10.0,
+                    color: Color.fromRGBO(0, 179, 253, 0.8),
+                  ),
+                ],
+              ),
+              // Big red stationary radius while in stationary state.
+              new CircleLayerOptions(
+                  circles: this._myPositions.length > 0
+                      ? [this._myPositions.last]
+                      : []),
+              // Recorded locations.
+              new CircleLayerOptions(circles: this._myPositions)
             ],
-          ),
-          // Big red stationary radius while in stationary state.
-          new CircleLayerOptions(
-              circles:
-                  this._myPositions.length > 0 ? [this._myPositions.last] : []),
-          // Recorded locations.
-          new CircleLayerOptions(circles: this._myPositions)
-        ],
-      ),
+          )),
     );
   }
 
@@ -328,13 +331,12 @@ class _MapPageStateNew extends State<MapPage> {
     this._myPositions.add(this.transformPosition(
         lat: position.latitude,
         lon: position.longitude,
-        time: WebsocketClient.of(context).socketClient.ourTime));
+        time: WebsocketClient.of(context).ourTime));
     this._mapOptions.center = LatLng(position.latitude, position.longitude);
     this._mapOptions.crs.scale(_mapController.zoom);
 
     setState(() {});
     await WebsocketClient.of(context)
-        .socketClient
         .geopointPostCoords(position.latitude, position.longitude);
   }
 
@@ -343,7 +345,6 @@ class _MapPageStateNew extends State<MapPage> {
 
     List<Future> futures = [];
     futures.add(WebsocketClient.of(context)
-        .socketClient
         .geopointGetMyCoords()
         .then((ServerResponse response1) {
       final myCoords = response1.data as List<Map<String, double>>;
@@ -362,7 +363,6 @@ class _MapPageStateNew extends State<MapPage> {
     }));
 
     futures.add(WebsocketClient.of(context)
-        .socketClient
         .geopointGetFriendsCoords()
         .then((ServerResponse response2) {
       var friendCoords = [];
@@ -402,7 +402,7 @@ class _MapPageStateNew extends State<MapPage> {
       @required double lon,
       @required double time,
       String username}) {
-    username ??= WebsocketClient.of(context).socketClient.username;
+    username ??= WebsocketClient.of(context).username;
     username ??= 'BLANK';
     List<int> digest = sha1.convert(utf8.encode(username)).bytes;
 

@@ -3,29 +3,28 @@ import 'package:geosquad/components/friends.dart';
 import 'package:geosquad/components/home.dart';
 import 'package:geosquad/components/settings.dart';
 
+import '../main.dart';
+
 class Profile extends StatefulWidget {
   @override
   _Profile createState() => new _Profile();
 }
 
 int _selectedIndex = 1;
-List<Widget> _widgetList = <Widget>[
-  new FriendsPage(),
-  new HomePage(),
-  new Settings(),
-];
 
 class _Profile extends State<Profile> {
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return new Scaffold(
       appBar: new AppBar(
         leading: new IconButton(
           onPressed: () {
-            Navigator.of(this.context)
-                .pushReplacementNamed('/map');
+            Navigator.of(this.context).pushReplacementNamed('/map');
           },
-          icon: new Icon(Icons.arrow_back_ios, color: Colors.black,),
+          icon: new Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black,
+          ),
         ),
         title: new Text(
           "Profile",
@@ -37,7 +36,18 @@ class _Profile extends State<Profile> {
         centerTitle: true,
         backgroundColor: Colors.white,
       ),
-      body: _widgetList.elementAt(_selectedIndex),
+      body: WebsocketFriendChangeListener(
+          context: context,
+          child: Builder(builder: (context) {
+            switch (_selectedIndex) {
+              case 0:
+                return FriendsPage();
+              case 1:
+                return HomePage();
+              case 2:
+                return Settings();
+            }
+          })),
       bottomNavigationBar: new BottomNavigationBar(
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(
@@ -50,7 +60,6 @@ class _Profile extends State<Profile> {
                 Icons.account_circle,
                 color: Colors.yellow,
               ),
-
             ),
             BottomNavigationBarItem(
               icon: Icon(
@@ -83,8 +92,7 @@ class _Profile extends State<Profile> {
             setState(() {
               _selectedIndex = index;
             });
-          }
-      ),
+          }),
     );
   }
 }

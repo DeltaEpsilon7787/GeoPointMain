@@ -36,7 +36,6 @@ class _ValidatePageState extends State<ValidatePage> {
                     if (this.formKey.currentState.validate()) {
                       this.formKey.currentState.save();
                       WebsocketClient.of(context)
-                          .socketClient
                           .attemptActivation(this._key)
                           .then((ServerResponse response) {
                         if (response.status) {

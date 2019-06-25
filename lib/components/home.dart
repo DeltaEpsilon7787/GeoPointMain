@@ -15,8 +15,8 @@ class _HomePage extends State<HomePage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    this._username = WebsocketClient.of(context).socketClient.username;
-    this._mail = WebsocketClient.of(context).socketClient.email;
+    this._username = WebsocketClient.of(context).username;
+    this._mail = WebsocketClient.of(context).email;
   }
 
   @override
@@ -64,7 +64,7 @@ class _HomePage extends State<HomePage> {
                 new FlatButton(
                   padding: EdgeInsets.all(0),
                   onPressed: () {
-                    WebsocketClient.of(context).socketClient.logOut();
+                    WebsocketClient.of(context).logOut();
                     Navigator.of(context).pushReplacementNamed('/login');
                   },
                   child: new Row(

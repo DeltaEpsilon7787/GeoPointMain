@@ -8,10 +8,12 @@ import 'package:geosquad/components/map_page.dart';
 import 'package:geosquad/components/profile.dart';
 import 'package:geosquad/components/validate_page.dart';
 
+import 'components/friends.dart';
+
 void main() => runApp(App());
 
 class WebsocketClient extends InheritedWidget {
-  final WebsocketService socketClient = new WebsocketService();
+  final WebsocketService client = new WebsocketService();
 
   WebsocketClient({Key key, @required Widget child})
       : super(key: key, child: child);
@@ -19,9 +21,116 @@ class WebsocketClient extends InheritedWidget {
   @override
   bool updateShouldNotify(InheritedWidget oldWidget) => true;
 
-  static WebsocketClient of(BuildContext context) {
-    return context.inheritFromWidgetOfExactType(WebsocketClient)
-        as WebsocketClient;
+  static WebsocketService of(BuildContext context) {
+    return (context.inheritFromWidgetOfExactType(WebsocketClient)
+            as WebsocketClient)
+        .client as WebsocketService;
+  }
+}
+
+class WebsocketBasicServerWhines extends StatelessWidget {
+  final BuildContext context;
+  final Widget child;
+
+  WebsocketBasicServerWhines({@required this.context, @required this.child}) {
+    WebsocketClient.of(context)
+        .serverBroadcast
+        .stream
+        .listen(_processServerBroadcast);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Builder(builder: (context) => this.child);
+  }
+
+  void _processServerBroadcast(ServerResponse broadcast) {
+    switch (broadcast.code) {
+      case 'NEED_AUTH':
+        this._needAuth();
+        break;
+      case 'FRIEND_REQUEST':
+        this._processFriendRequest(broadcast.data);
+        break;
+    }
+  }
+
+  void _needAuth() {
+    Navigator.of(this.context).pushReplacementNamed('/login');
+    Scaffold.of(this.context)
+        .showSnackBar(SnackBar(content: Text('You need to authorize again.')));
+  }
+
+  void _processFriendRequest(String data) {
+    showDialog(
+        context: this.context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Friend request'),
+            content: Text('$data wants to add you as a friend...'),
+            actions: <Widget>[
+              FlatButton(
+                  child: Text('Accept'),
+                  onPressed: () {
+                    WebsocketClient.of(context)
+                        .acceptFriendRequest(data)
+                        .then((ServerResponse response) {
+                      Scaffold.of(context).showSnackBar(SnackBar(
+                          content: Text('You have added $data as a friend.')));
+                    });
+                    Navigator.of(context).pop();
+                  }),
+              FlatButton(
+                  child: Text('Decline'),
+                  onPressed: () {
+                    WebsocketClient.of(context)
+                        .declineFriendRequest(data)
+                        .then((ServerResponse response) {
+                      Scaffold.of(context).showSnackBar(SnackBar(
+                          content: Text(
+                              "You have declined $data's friend request.")));
+                    });
+                    Navigator.of(context).pop();
+                  }),
+            ],
+          );
+        });
+  }
+}
+
+class WebsocketFriendChangeListener extends StatefulWidget {
+  final BuildContext context;
+  final Widget child;
+
+  WebsocketFriendChangeListener({@required this.context, @required this.child});
+
+  @override
+  _WebsocketFriendChangeListenerState createState() =>
+      _WebsocketFriendChangeListenerState();
+}
+
+class _WebsocketFriendChangeListenerState
+    extends State<WebsocketFriendChangeListener> {
+  void didChangeDependencies() {
+    WebsocketClient.of(context)
+        .serverBroadcast
+        .stream
+        .listen(_processServerBroadcast);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WebsocketBasicServerWhines(
+        context: this.widget.context,
+        child: Builder(builder: (context) => this.widget.child));
+  }
+
+  void _processServerBroadcast(ServerResponse broadcast) {
+    switch (broadcast.code) {
+      case 'FRIEND_LIST_CHANGED':
+        setState(() {});
+        break;
+    }
   }
 }
 
@@ -31,18 +140,8 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return new WebsocketClient(
         child: MaterialApp(
-            debugShowCheckedModeBanner: false,
             title: 'Geopoint Squad',
             theme: ThemeData(
-              // This is the theme of your application.
-              //
-              // Try running your application with "flutter run". You'll see the
-              // application has a blue toolbar. Then, without quitting the app, try
-              // changing the primarySwatch below to Colors.green and then invoke
-              // "hot reload" (press "r" in the console where you ran "flutter run",
-              // or simply save your changes to "hot reload" in a Flutter IDE).
-              // Notice that the counter didn't reset back to zero; the application
-              // is not restarted.
               primarySwatch: Colors.blue,
             ),
             initialRoute: '/',
@@ -74,20 +173,14 @@ class _HomeState extends State<Home> {
 
   void didChangeDependencies() {
     super.didChangeDependencies();
-    WebsocketClient.of(context)
-        .socketClient
-        .establishGuestSession()
-        .then((bool status) {
+    WebsocketClient.of(context).establishGuestSession().then((bool status) {
       if (!status) {
         this._currentState = APP_STATE.FIRST_CONNECTION_FAILED;
         return null;
       }
       return Future.value();
     }).then((_) {
-      return WebsocketClient.of(context)
-          .socketClient
-          .tryToAuth()
-          .then((bool status) {
+      return WebsocketClient.of(context).tryToAuth().then((bool status) {
         if (status) {
           this._currentState = APP_STATE.AUTO_LOGIN_SUCCESS;
         } else {
@@ -102,7 +195,7 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(body: () {
+    return new Scaffold(body: Builder(builder: (context) {
       switch (this._currentState) {
         case APP_STATE.INITIAL:
           return new Center(child: CircularProgressIndicator());
@@ -123,6 +216,6 @@ class _HomeState extends State<Home> {
         case APP_STATE.AUTO_LOGIN_FAILED:
           return new LoginPage();
       }
-    }());
+    }));
   }
 }

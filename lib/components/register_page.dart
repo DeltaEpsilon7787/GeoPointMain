@@ -117,7 +117,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       this.formKey.currentState.save();
                       setState(() => this._waitingForResponse = true);
                       WebsocketClient.of(context)
-                          .socketClient
                           .attemptRegister(
                               this._username, this._password, this._email)
                           .then(

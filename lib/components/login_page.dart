@@ -19,10 +19,10 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (WebsocketClient.of(context).socketClient.acquiringSession) {
+    if (WebsocketClient.of(context).acquiringSession) {
       // Could've used a stream for session status, but meh
       Timer.periodic(Duration(milliseconds: 100), (Timer that) {
-        if (!WebsocketClient.of(context).socketClient.acquiringSession) {
+        if (!WebsocketClient.of(context).acquiringSession) {
           that.cancel();
           setState(() {});
         }
@@ -111,7 +111,6 @@ class _LoginPageState extends State<LoginPage> {
                               if (this.formKey.currentState.validate()) {
                                 this.formKey.currentState.save();
                                 WebsocketClient.of(context)
-                                    .socketClient
                                     .tryToAuth(
                                         username: this._username,
                                         password: this._password)
