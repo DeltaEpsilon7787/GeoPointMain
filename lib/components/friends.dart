@@ -8,9 +8,9 @@ class FriendsPage extends StatefulWidget {
 }
 
 class FriendsState extends State<FriendsPage> {
-  Future<List<String>> _listFriends() async {
+  Future<List> _listFriends() async {
     return App.socketClient.getMyFriends().then((ServerResponse response) {
-      return response.data as List<String>;
+      return response.data as List;
     });
   }
 
@@ -18,8 +18,7 @@ class FriendsState extends State<FriendsPage> {
   Widget build(BuildContext context) {
     return new Scaffold(
       body: new SingleChildScrollView(
-        child: FutureBuilder(
-            initialData: new Center(child: CircularProgressIndicator()),
+        child: FutureBuilder<List>(
             future: _listFriends(),
             builder: (context, snapshot) {
               switch (snapshot.connectionState) {
@@ -45,7 +44,7 @@ class FriendsState extends State<FriendsPage> {
                   );
 
                 case ConnectionState.done:
-                  if (snapshot.error) {
+                  if (snapshot.hasError) {
                     return new Container(
                       child: new Center(
                         child: new Text("ERROR"),
