@@ -18,9 +18,9 @@ class FriendsState extends State<FriendsPage> {
   Widget build(BuildContext context) {
     return new Scaffold(
       body: new SingleChildScrollView(
-        child: new FutureBuilder<List>(
+        child: FutureBuilder<List>(
             future: _listFriends(),
-            builder: (BuildContext context, AsyncSnapshot snapshot) {
+            builder: (context, snapshot) {
               switch (snapshot.connectionState) {
                 case ConnectionState.waiting:
                   return new Container(
@@ -52,7 +52,6 @@ class FriendsState extends State<FriendsPage> {
                     );
                   } else {
                     return new Container(
-                      height: MediaQuery.of(context).size.height,
                       child: new ListView.builder(
                         shrinkWrap: true,
                         itemCount: snapshot.data.length,
