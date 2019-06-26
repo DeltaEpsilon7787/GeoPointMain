@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
+import 'package:geosquad/components/websocket_client.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -13,10 +14,21 @@ class _HomePage extends State<HomePage> {
   String _distance;
 
   void didChangeDependencies() {
-    super.didChangeDependencies();
-
     this._username = WebsocketClient.of(context).username;
-    this._mail = WebsocketClient.of(context).email;
+    WebsocketClient.of(context).getUserInfo(this._username).then(
+        (ServerResponse response) {
+          print(response.data['email']);
+          if (response.status){
+            this._mail = response.data['email'];
+            this._speed = response.data[1];
+            this._distance = response.data[2];
+          }
+          else {
+            print("huy");
+          }
+        }
+    );
+    super.didChangeDependencies();
   }
 
   @override
@@ -73,7 +85,7 @@ class _HomePage extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 new Text(
-                  '$_mail',
+                  '${this._mail}',
                   style: new TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16.0,
@@ -134,7 +146,7 @@ class _HomePage extends State<HomePage> {
                 new Text("NICKNAME",
                     style: new TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16.0)),
-                new Text("$_username"),
+                new Text('$_username'),
               ],
             ),
           ),
@@ -146,7 +158,7 @@ class _HomePage extends State<HomePage> {
                 new Text("AVERAGE SPEED",
                     style: new TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16.0)),
-                new Text("100"),
+                new Text('$_speed'),
               ],
             ),
           ),
@@ -158,7 +170,7 @@ class _HomePage extends State<HomePage> {
                 new Text("DISTANCE TRAVELED",
                     style: new TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16.0)),
-                new Text("10000"),
+                new Text('$_distance'),
               ],
             ),
           ),

@@ -13,6 +13,7 @@ class _FriendsRequestState extends State<FriendsRequestPage> {
         .getFriendRequests()
         .then((ServerResponse response) {
       try {
+        print(response.data.length);
         return response.data as List;
       } catch (Exception) {
         return [];
@@ -73,15 +74,19 @@ class _FriendsRequestState extends State<FriendsRequestPage> {
                                       fontWeight: FontWeight.bold)),
                               new Row(
                                 children: <Widget>[
-                                  new CircleAvatar(
-                                    backgroundColor: Colors.yellow,
-                                  ),
-                                  new Padding(
-                                    padding: EdgeInsets.only(left: 15.0),
+                                  new IconButton(
+                                      icon: new Icon(Icons.check),
+                                      iconSize: 32.0,
+                                      onPressed: () {
+
+                                      },
                                   ),
                                   new IconButton(
                                     icon: new Icon(Icons.block),
                                     iconSize: 32.0,
+                                    onPressed: () {
+
+                                    },
                                   ),
                                 ],
                               ),

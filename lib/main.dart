@@ -139,6 +139,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return new WebsocketClient(
         child: MaterialApp(
+          debugShowCheckedModeBanner: false,
             title: 'Geopoint Squad',
             theme: ThemeData(
               primarySwatch: Colors.blue,
