@@ -258,7 +258,7 @@ class _MapPageStateNew extends State<MapPage> {
             color: Colors.black,
           ),
           onPressed: () {
-            Navigator.of(this.context).pushReplacementNamed('/profile');
+            Navigator.of(this.context).pushNamed('/map/profile');
           },
         ),
       ),

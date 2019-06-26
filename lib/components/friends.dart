@@ -7,149 +7,139 @@ import 'package:geosquad/components/friends_request.dart';
 
 import '../main.dart';
 
-class FriendsPage extends StatefulWidget {
-  @override
-  FriendsState createState() => new FriendsState();
-}
-
-class FriendsState extends State<FriendsPage>
-    with SingleTickerProviderStateMixin {
-  final _addFriend = TextEditingController();
-  TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = new TabController(vsync: this, initialIndex: 0, length: 2);
-  }
+class FriendsPage extends StatelessWidget {
+  const FriendsPage({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      appBar: new AppBar(
-        leading: new IconButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          icon: new Icon(
-            Icons.arrow_back_ios,
-            color: Colors.black,
+    // var tabController = new TabController(vsync: initialIndex: 0, length: 2);
+    return DefaultTabController(
+        initialIndex: 0,
+        length: 2,
+        child: new Scaffold(
+          appBar: new AppBar(
+            leading: new IconButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              icon: new Icon(
+                Icons.arrow_back_ios,
+                color: Colors.black,
+              ),
+            ),
+            title: new Text(
+              "Friends",
+              style: new TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            centerTitle: true,
+            backgroundColor: Colors.white,
+            bottom: new TabBar(
+              labelColor: Colors.black,
+              indicatorColor: Colors.black,
+              tabs: <Widget>[
+                new Tab(text: "Friends"),
+                new Tab(text: "Friend requests")
+              ],
+            ),
           ),
-        ),
-        title: new Text(
-          "Friends",
-          style: new TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
+          body: new TabBarView(
+            children: <Widget>[
+              new FriendsListPage(),
+              new FriendsRequestPage(),
+            ],
           ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        bottom: new TabBar(
-          controller: _tabController,
-          labelColor: Colors.black,
-          indicatorColor: Colors.black,
-          tabs: <Widget>[
-            new Tab(text: "Friends"),
-            new Tab(text: "Friend requests")
-          ],
-        ),
-      ),
-      body: new TabBarView(
-        controller: _tabController,
-        children: <Widget>[
-          new FriendsListPage(),
-          new FriendsRequestPage(),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.person_add),
-          backgroundColor: Colors.green,
-          onPressed: () {
-            showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return new AlertDialog(
-                    title: new Text("Add to friends",
-                        style: new TextStyle(fontWeight: FontWeight.bold)),
-                    content: new TextFormField(
-                      controller: _addFriend,
-                      decoration: new InputDecoration(
-                          labelText: "Enter friend\'s login"),
-                    ),
-                    actions: <Widget>[
-                      new FlatButton(
-                        child: new Text('Add'),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          WebsocketClient.of(context)
-                              .sendFriendsRequest(this._addFriend.text)
-                              .then(
-                            (ServerResponse response) {
-                              if (response.status) {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return new AlertDialog(
-                                      title: new Text("Add to friends",
-                                          style: new TextStyle(
-                                              fontWeight: FontWeight.bold)),
-                                      content:
-                                          new Text("Request successfully sent"),
-                                      actions: <Widget>[
-                                        new FlatButton(
-                                          child: new Text("OK"),
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              } else {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return new AlertDialog(
-                                      title: new Text("An error occurred",
-                                          style: new TextStyle(
-                                              fontWeight: FontWeight.bold)),
-                                      content: new Text(response.code),
-                                      actions: <Widget>[
-                                        new FlatButton(
-                                          child: new Text('OK'),
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              }
-                            }
-                          );
-                        },
-                      ),
-                      new FlatButton(
-                        child: new Text("Cancel"),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    ],
-                  );
-                });
-          }),
-    );
+          floatingActionButton: new AddFriendButton(),
+        ));
   }
+}
 
-  Future<List> _listFriends() async {
-    return WebsocketClient.of(context)
-        .getMyFriends()
-        .then((ServerResponse response) {
-      return response.data as List;
-    });
+class AddFriendButton extends StatelessWidget {
+  const AddFriendButton({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    String friendLogin;
+
+    return FloatingActionButton(
+        child: Icon(Icons.person_add),
+        backgroundColor: Colors.green,
+        onPressed: () {
+          showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return new AlertDialog(
+                  title: new Text("Add to friends",
+                      style: new TextStyle(fontWeight: FontWeight.bold)),
+                  content: new TextFormField(
+                    decoration:
+                        new InputDecoration(labelText: "Enter friend\'s login"),
+                    onFieldSubmitted: (String value) => friendLogin = value,
+                  ),
+                  actions: <Widget>[
+                    new FlatButton(
+                      child: new Text('Add'),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        WebsocketClient.of(context)
+                            .sendFriendsRequest(friendLogin)
+                            .then((ServerResponse response) {
+                          if (response.status) {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return new AlertDialog(
+                                  title: new Text("Add to friends",
+                                      style: new TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                  content:
+                                      new Text("Request successfully sent"),
+                                  actions: <Widget>[
+                                    new FlatButton(
+                                      child: new Text("OK"),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          } else {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return new AlertDialog(
+                                  title: new Text("An error occurred",
+                                      style: new TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                  content: new Text(response.code),
+                                  actions: <Widget>[
+                                    new FlatButton(
+                                      child: new Text('OK'),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
+                        });
+                      },
+                    ),
+                    new FlatButton(
+                      child: new Text("Cancel"),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                );
+              });
+        });
   }
 }

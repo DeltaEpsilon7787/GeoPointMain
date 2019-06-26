@@ -59,7 +59,7 @@ class WebsocketService {
 
   Future<bool> establishGuestSession() async {
     if (this._guestChannel != null) {
-      return Future.value(true);
+      return true;
     }
 
     this._guestChannel =
@@ -73,8 +73,8 @@ class WebsocketService {
         .firstWhere((ServerResponse response) {
           return response.code == 'GUEST_SESSION';
         })
-        .then((ServerResponse response) => Future.value(true))
-        .timeout(Duration(seconds: 2), onTimeout: () => Future.value(false))
+        .then((ServerResponse response) => true)
+        .timeout(Duration(seconds: 2), onTimeout: () => false)
         .then((var result) {
           return result;
         });
@@ -126,7 +126,7 @@ class WebsocketService {
       password = prefs.getString('password');
 
       if (username == null || password == null) {
-        return Future.value(false);
+        return false;
       }
     }
     return this._tryToEstablishSession(username, password);
@@ -213,9 +213,9 @@ class WebsocketService {
               .listen((ServerResponse response) =>
                   this.serverBroadcast.add(response));
           this.username = username;
-          return Future.value(true);
+          return true;
         case ('AUTH_FAILED'):
-          return Future.value(false);
+          return false;
       }
     });
   }

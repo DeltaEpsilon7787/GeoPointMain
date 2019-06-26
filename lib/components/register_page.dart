@@ -84,8 +84,9 @@ class RegisterPage extends StatelessWidget {
                 ),
                 new TextFormField(
                   decoration: new InputDecoration(labelText: "Repeat password"),
-                  validator: (value) =>
-                      value != _passController.text ? "Password do not match" : null,
+                  validator: (value) => value != _passController.text
+                      ? "Password do not match"
+                      : null,
                   obscureText: true,
                   autovalidate: true,
                 ),
@@ -112,24 +113,23 @@ class RegisterPage extends StatelessWidget {
                             Navigator.of(context)
                                 .pushNamed('/auth/register/validate');
                           } else {
-                            return showDialog(
+                            showDialog(
                               context: context,
-                              builder: (BuildContext context) {
-                                return new AlertDialog(
-                                  title: new Text("An error occurred",
-                                      style: new TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  content: new Text(response.code),
-                                  actions: <Widget>[
-                                    new FlatButton(
-                                      child: new Text('OK'),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                    ),
-                                  ],
-                                );
-                              },
+                              builder: (BuildContext context) =>
+                                  new AlertDialog(
+                                    title: new Text("An error occurred",
+                                        style: new TextStyle(
+                                            fontWeight: FontWeight.bold)),
+                                    content: new Text(response.code),
+                                    actions: <Widget>[
+                                      new FlatButton(
+                                        child: new Text('OK'),
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                    ],
+                                  ),
                             );
                           }
                         },

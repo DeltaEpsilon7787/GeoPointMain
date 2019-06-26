@@ -4,6 +4,40 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import 'package:geosquad/components/websocket_client.dart';
 
+class FriendRequest extends StatelessWidget {
+  final String friendName;
+  const FriendRequest({Key key, this.friendName}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return new ListTile(
+      leading: new CircleAvatar(
+        backgroundColor: Colors.blue,
+      ),
+      title: new Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          new Text(friendName,
+              style: new TextStyle(fontWeight: FontWeight.bold)),
+          new Row(
+            children: <Widget>[
+              new IconButton(
+                icon: new Icon(Icons.check),
+                iconSize: 32.0,
+                onPressed: () {},
+              ),
+              new IconButton(
+                  icon: new Icon(Icons.block),
+                  iconSize: 32.0,
+                  onPressed: () {}),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class FriendsRequestPage extends StatefulWidget {
   @override
   _FriendsRequestState createState() => new _FriendsRequestState();
@@ -63,37 +97,8 @@ class _FriendsRequestState extends State<FriendsRequestPage> {
                     child: new ListView.builder(
                       shrinkWrap: true,
                       itemCount: snapshot.data.length,
-                      itemBuilder: (context, index) {
-                        return new ListTile(
-                          leading: new CircleAvatar(
-                            backgroundColor: Colors.blue,
-                          ),
-                          title: new Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: <Widget>[
-                              new Text(snapshot.data[index],
-                                  style: new TextStyle(
-                                      fontWeight: FontWeight.bold)),
-                              new Row(
-                                children: <Widget>[
-                                  new IconButton(
-                                      icon: new Icon(Icons.check),
-                                      iconSize: 32.0,
-                                      onPressed: () {
-
-                                      },
-                                  ),
-                                  new IconButton(
-                                    icon: new Icon(Icons.block),
-                                    iconSize: 32.0,
-                                    onPressed: () {}
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                      itemBuilder: (context, index) =>
+                          FriendRequest(friendName: snapshot.data[index]),
                     ),
                   );
                 }
