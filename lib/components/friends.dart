@@ -5,14 +5,11 @@ import 'package:geosquad/components/websocket_client.dart';
 import 'package:geosquad/components/friends_list.dart';
 import 'package:geosquad/components/friends_request.dart';
 
-import '../main.dart';
-
 class FriendsPage extends StatelessWidget {
   const FriendsPage({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // var tabController = new TabController(vsync: initialIndex: 0, length: 2);
     return DefaultTabController(
         initialIndex: 0,
         length: 2,

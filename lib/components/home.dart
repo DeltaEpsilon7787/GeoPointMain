@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../main.dart';
 import 'package:geosquad/components/websocket_client.dart';
 
 class HomePage extends StatelessWidget {

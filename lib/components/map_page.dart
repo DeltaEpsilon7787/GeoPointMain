@@ -9,7 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
 
 import './websocket_client.dart';
-import '../main.dart';
+import './notifiers.dart';
 
 const String MAP_TOKEN =
     'pk.eyJ1IjoiY2hyaXN0b2NyYWN5IiwiYSI6ImVmM2Y2MDA1NzIyMjg1NTdhZGFlYmZiY2QyODVjNzI2In0.htaacx3ZhE5uAWN86-YNAQ';
@@ -240,31 +240,31 @@ class _MapPageStateNew extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      appBar: new AppBar(
-        backgroundColor: Colors.white,
-        centerTitle: true,
-        title: new Text(
-          "CATFISH-GEO",
-          style: new TextStyle(
-            fontWeight: FontWeight.bold,
-            fontStyle: FontStyle.italic,
-            color: Colors.black,
+    return new ServerNotifier(
+      context: context,
+      child: Scaffold(
+          appBar: new AppBar(
+            backgroundColor: Colors.white,
+            centerTitle: true,
+            title: new Text(
+              "CATFISH-GEO",
+              style: new TextStyle(
+                fontWeight: FontWeight.bold,
+                fontStyle: FontStyle.italic,
+                color: Colors.black,
+              ),
+            ),
+            leading: new IconButton(
+              icon: new Icon(
+                Icons.home,
+                color: Colors.black,
+              ),
+              onPressed: () {
+                Navigator.of(context).pushNamed('/map/profile');
+              },
+            ),
           ),
-        ),
-        leading: new IconButton(
-          icon: new Icon(
-            Icons.home,
-            color: Colors.black,
-          ),
-          onPressed: () {
-            Navigator.of(this.context).pushNamed('/map/profile');
-          },
-        ),
-      ),
-      body: new WebsocketBasicServerWhines(
-          context: context,
-          child: FlutterMap(
+          body: FlutterMap(
             mapController: _mapController,
             options: _mapOptions,
             layers: [
@@ -341,8 +341,6 @@ class _MapPageStateNew extends State<MapPage> {
   }
 
   void _updatePoints() async {
-    return;
-
     List<Future> futures = [];
     futures.add(WebsocketClient.of(context)
         .geopointGetMyCoords()

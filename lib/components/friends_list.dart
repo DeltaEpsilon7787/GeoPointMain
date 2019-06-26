@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../main.dart';
+import './notifiers.dart';
 import 'package:geosquad/components/websocket_client.dart';
+
+final friendUpdateNotifier = StreamController<void>();
 
 class FriendListRow extends StatelessWidget {
   final String friendName;
@@ -30,7 +32,7 @@ class FriendListRow extends StatelessWidget {
               new IconButton(
                 icon: new Icon(Icons.block),
                 onPressed: () {
-                  return showDialog(
+                  showDialog(
                       context: context,
                       builder: (BuildContext context) {
                         return new AlertDialog(
@@ -45,6 +47,7 @@ class FriendListRow extends StatelessWidget {
                               onPressed: () {
                                 WebsocketClient.of(context)
                                     .deleteFriend(friendName);
+                                friendUpdateNotifier.add(null);
                                 Navigator.of(context).pop();
                               },
                             ),
@@ -70,12 +73,19 @@ class FriendListRow extends StatelessWidget {
 }
 
 class FriendsListPage extends StatefulWidget {
-  @override
-  _FriendsListState createState() => new _FriendsListState();
+  FriendsListPage({Key key}) : super(key: key);
+
+  _FriendsListPageState createState() => _FriendsListPageState();
 }
 
-class _FriendsListState extends State<FriendsListPage> {
-  Future<List> _listFriends() async {
+class _FriendsListPageState extends State<FriendsListPage> {
+  void initState() {
+    super.initState();
+
+    friendUpdateNotifier.stream.listen((_) => setState(() {}));
+  }
+
+  Future<List> _listFriends(BuildContext context) async {
     return WebsocketClient.of(context)
         .getMyFriends()
         .then((ServerResponse response) {
@@ -85,11 +95,11 @@ class _FriendsListState extends State<FriendsListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return new WebsocketFriendChangeListener(
+    return FriendNotifierWrapper(
         context: context,
         child: SingleChildScrollView(
           child: FutureBuilder<List>(
-              future: _listFriends(),
+              future: _listFriends(context),
               builder: (context, snapshot) {
                 switch (snapshot.connectionState) {
                   case ConnectionState.waiting:

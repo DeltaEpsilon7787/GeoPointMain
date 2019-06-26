@@ -12,7 +12,7 @@ class _Settings extends State<Settings> {
       appBar: new AppBar(
         leading: new IconButton(
           onPressed: () {
-            Navigator.of(this.context)
+            Navigator.of(context)
                 .pushReplacementNamed('/map');
           },
           icon: new Icon(Icons.arrow_back_ios, color: Colors.black,),

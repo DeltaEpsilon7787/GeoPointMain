@@ -5,7 +5,25 @@ import 'dart:core';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/io.dart';
 
+import 'package:flutter/material.dart';
+
 const String WEBSERVER_LOCATION = "31.25.28.142:8010";
+
+class WebsocketClient extends InheritedWidget {
+  final WebsocketService client = WebsocketService();
+
+  WebsocketClient({Key key, @required Widget child})
+      : super(key: key, child: child);
+
+  @override
+  bool updateShouldNotify(InheritedWidget oldWidget) => true;
+
+  static WebsocketService of(BuildContext context) {
+    return (context.inheritFromWidgetOfExactType(WebsocketClient)
+            as WebsocketClient)
+        .client as WebsocketService;
+  }
+}
 
 class ServerResponse {
   int id;
@@ -178,9 +196,7 @@ class WebsocketService {
               this._authorizedChannel.sink.add(jsonEncode(serverRequest));
             }
           });
-        } catch (WebSocketChannelException) {
-          
-        }
+        } catch (WebSocketChannelException) {}
       }
     } else {
       this._guestChannel?.sink?.add(jsonEncode(serverRequest));
