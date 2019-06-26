@@ -86,13 +86,7 @@ class _FriendsRequestState extends State<FriendsRequestPage> {
                                   new IconButton(
                                     icon: new Icon(Icons.block),
                                     iconSize: 32.0,
-<<<<<<< HEAD
                                     onPressed: () {}
-=======
-                                    onPressed: () {
-
-                                    },
->>>>>>> 6d010d20e6b680731d567b815ee00c0df69a589d
                                   ),
                                 ],
                               ),
