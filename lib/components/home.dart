@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
+import 'package:geosquad/components/websocket_client.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
@@ -132,7 +132,7 @@ class HomePage extends StatelessWidget {
                 new Text("AVERAGE SPEED",
                     style: new TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16.0)),
-                new Text("100"),
+                // Future Builder используй для этих двух контейнеров
               ],
             ),
           ),
@@ -144,7 +144,7 @@ class HomePage extends StatelessWidget {
                 new Text("DISTANCE TRAVELED",
                     style: new TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16.0)),
-                new Text("10000"),
+                // Future Builder используй для этих двух контейнеров
               ],
             ),
           ),

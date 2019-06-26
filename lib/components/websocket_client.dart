@@ -80,6 +80,9 @@ class WebsocketService {
         });
   }
 
+  Future<ServerResponse> getUserInfo(String username) async =>
+      this._sendMessage('get_user_info', data: {'target': username});
+
   Future<ServerResponse> getFriendRequests() async =>
       this._sendMessage('get_friend_requests');
 

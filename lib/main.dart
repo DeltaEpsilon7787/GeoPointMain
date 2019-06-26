@@ -209,6 +209,7 @@ class _FirstPageState extends State<FirstPage> {
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
     return new Scaffold(body: Builder(builder: (context) {
       switch (this._currentState) {
         case APP_STATE.INITIAL:
@@ -233,6 +234,24 @@ class _FirstPageState extends State<FirstPage> {
           return CircularProgressIndicator();
       }
     }));
+=======
+    return new WebsocketClient(
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+            title: 'Geopoint Squad',
+            theme: ThemeData(
+              primarySwatch: Colors.blue,
+            ),
+            initialRoute: '/',
+            routes: {
+          '/': (context) => new Home(),
+          '/login': (context) => new LoginPage(),
+          '/auth': (context) => new RegisterPage(),
+          '/map': (context) => new MapPage(),
+          '/profile': (context) => new Profile(),
+          '/validate': (context) => new ValidatePage(),
+        }));
+>>>>>>> 6d010d20e6b680731d567b815ee00c0df69a589d
   }
 
   void didChangeDependencies() {
