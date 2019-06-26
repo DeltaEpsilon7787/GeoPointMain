@@ -4,31 +4,18 @@ import 'dart:convert';
 import 'websocket_client.dart';
 import '../main.dart';
 
-class RegisterPage extends StatefulWidget {
-  @override
-  _RegisterPageState createState() => _RegisterPageState();
-}
+final _registerFormKey = new GlobalKey<FormState>();
 
-class _RegisterPageState extends State<RegisterPage> {
-  bool _waitingForResponse = false;
-
-  final _passController = TextEditingController();
-  final formKey = new GlobalKey<FormState>();
-
-  String _username;
-  String _email;
-  String _password;
-
-  void initState() {
-    super.initState();
-    this._waitingForResponse = false;
-  }
+class RegisterPage extends StatelessWidget {
+  const RegisterPage({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    if (this._waitingForResponse) {
-      return new Center(child: CircularProgressIndicator());
-    }
+    var _passController = TextEditingController();
+
+    String _username;
+    String _email;
+    String _password;
 
     return Scaffold(
       bottomNavigationBar: new BottomAppBar(
@@ -45,7 +32,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 style: new TextStyle(fontWeight: FontWeight.bold),
               ),
               onPressed: () {
-                Navigator.of(this.context).pushReplacementNamed('/login');
+                Navigator.of(context).pop();
               },
               splashColor: Colors.white,
               highlightColor: Colors.white,
@@ -57,7 +44,7 @@ class _RegisterPageState extends State<RegisterPage> {
         padding: new EdgeInsets.all(20.0),
         child: new SingleChildScrollView(
           child: new Form(
-            key: this.formKey,
+            key: _registerFormKey,
             child: new Column(
               children: <Widget>[
                 new Container(
@@ -78,13 +65,13 @@ class _RegisterPageState extends State<RegisterPage> {
                       ? "Login is incorrect"
                       : null,
                   autovalidate: true,
-                  onSaved: (String value) => this._username = value,
+                  onSaved: (String value) => _username = value,
                 ),
                 new TextFormField(
                   decoration: new InputDecoration(labelText: "E-mail"),
                   validator: validateEmail,
                   autovalidate: true,
-                  onSaved: (String value) => this._email = value,
+                  onSaved: (String value) => _email = value,
                 ),
                 new TextFormField(
                   controller: _passController,
@@ -93,14 +80,12 @@ class _RegisterPageState extends State<RegisterPage> {
                       value.length < 4 ? "Password too short" : null,
                   obscureText: true,
                   autovalidate: true,
-                  onSaved: (String value) => this._password =
-                      sha256.convert(utf8.encode(value)).toString(),
+                  onSaved: (String value) => _password = value,
                 ),
                 new TextFormField(
                   decoration: new InputDecoration(labelText: "Repeat password"),
-                  validator: (value) => value != _passController.text
-                      ? "Password do not match"
-                      : null,
+                  validator: (value) =>
+                      value != _passController.text ? "Password do not match" : null,
                   obscureText: true,
                   autovalidate: true,
                 ),
@@ -113,18 +98,19 @@ class _RegisterPageState extends State<RegisterPage> {
                     "Register",
                   ),
                   onPressed: () {
-                    if (this.formKey.currentState.validate()) {
-                      this.formKey.currentState.save();
-                      setState(() => this._waitingForResponse = true);
+                    if (_registerFormKey.currentState.validate()) {
+                      _registerFormKey.currentState.save();
                       WebsocketClient.of(context)
                           .attemptRegister(
-                              this._username, this._password, this._email)
+                              _username,
+                              sha256.convert(utf8.encode(_password)).toString(),
+                              _email)
                           .then(
                         (ServerResponse response) {
-                          setState(() => this._waitingForResponse = false);
+                          Navigator.of(context).pop();
                           if (response.status) {
-                            Navigator.of(this.context)
-                                .pushReplacementNamed('/validate');
+                            Navigator.of(context)
+                                .pushNamed('/auth/register/validate');
                           } else {
                             return showDialog(
                               context: context,
@@ -148,6 +134,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           }
                         },
                       );
+                      Navigator.of(context).pushNamed('/loading');
                     }
                   },
                 ),

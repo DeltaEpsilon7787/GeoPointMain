@@ -1,23 +1,8 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
 
-class HomePage extends StatefulWidget {
-  @override
-  _HomePage createState() => new _HomePage();
-}
-
-class _HomePage extends State<HomePage> {
-  String _username;
-  String _mail;
-  String _speed;
-  String _distance;
-
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    this._username = WebsocketClient.of(context).username;
-    this._mail = WebsocketClient.of(context).email;
-  }
+class HomePage extends StatelessWidget {
+  const HomePage({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +10,12 @@ class _HomePage extends State<HomePage> {
       appBar: new AppBar(
         leading: new IconButton(
           onPressed: () {
-            Navigator.of(this.context)
-                .pushReplacementNamed('/map');
+            Navigator.of(context)..pop();
           },
-          icon: new Icon(Icons.arrow_back_ios, color: Colors.black,),
+          icon: new Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black,
+          ),
         ),
         title: new Text(
           "Profile",
@@ -73,7 +60,7 @@ class _HomePage extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 new Text(
-                  '$_mail',
+                  '${WebsocketClient.of(context).email}',
                   style: new TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16.0,
@@ -91,7 +78,6 @@ class _HomePage extends State<HomePage> {
                           style: new TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16.0,
-
                           )),
                       new Padding(
                         padding: EdgeInsets.all(2.0),
@@ -134,7 +120,7 @@ class _HomePage extends State<HomePage> {
                 new Text("NICKNAME",
                     style: new TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16.0)),
-                new Text("$_username"),
+                new Text("${WebsocketClient.of(context).username}"),
               ],
             ),
           ),

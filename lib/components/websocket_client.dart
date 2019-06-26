@@ -35,7 +35,6 @@ class WebsocketService {
       StreamController.broadcast();
 
   Duration serverTimeOffset = Duration.zero;
-  bool acquiringSession = false;
 
   final Stopwatch timer = Stopwatch()..start();
 
@@ -68,8 +67,6 @@ class WebsocketService {
 
     this._guestChannel.stream.listen(this._processResponse);
 
-    this.acquiringSession = true;
-
     return this
         ._responder
         .stream
@@ -79,7 +76,6 @@ class WebsocketService {
         .then((ServerResponse response) => Future.value(true))
         .timeout(Duration(seconds: 2), onTimeout: () => Future.value(false))
         .then((var result) {
-          this.acquiringSession = false;
           return result;
         });
   }
@@ -170,7 +166,19 @@ class WebsocketService {
     }
 
     if (authorized) {
-      this._authorizedChannel.sink.add(jsonEncode(serverRequest));
+      try {
+        this._authorizedChannel.sink.add(jsonEncode(serverRequest));
+      } catch (WebSocketChannelException) {
+        try {
+          this.tryToAuth().then((bool status) {
+            if (status) {
+              this._authorizedChannel.sink.add(jsonEncode(serverRequest));
+            }
+          });
+        } catch (WebSocketChannelException) {
+          
+        }
+      }
     } else {
       this._guestChannel?.sink?.add(jsonEncode(serverRequest));
     }
@@ -187,14 +195,11 @@ class WebsocketService {
     var temporary = IOWebSocketChannel.connect(
         'ws://$WEBSERVER_LOCATION/websocket/$username/$password');
 
-    this.acquiringSession = true;
-
     temporary.stream.listen(this._processResponse);
 
     return this._responder.stream.firstWhere((ServerResponse response) {
       return ['AUTH_SUCCESSFUL', 'AUTH_FAILED'].contains(response.code);
     }).then((ServerResponse response) {
-      this.acquiringSession = false;
       switch (response.code) {
         case ('AUTH_SUCCESSFUL'):
           this._authorizedChannel = temporary;

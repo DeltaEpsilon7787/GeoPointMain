@@ -12,12 +12,13 @@ class FriendsPage extends StatefulWidget {
   FriendsState createState() => new FriendsState();
 }
 
-class FriendsState extends State<FriendsPage> with SingleTickerProviderStateMixin{
+class FriendsState extends State<FriendsPage>
+    with SingleTickerProviderStateMixin {
   final _addFriend = TextEditingController();
   TabController _tabController;
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
     _tabController = new TabController(vsync: this, initialIndex: 0, length: 2);
   }
@@ -28,10 +29,12 @@ class FriendsState extends State<FriendsPage> with SingleTickerProviderStateMixi
       appBar: new AppBar(
         leading: new IconButton(
           onPressed: () {
-            Navigator.of(this.context)
-                .pushReplacementNamed('/map');
+            Navigator.of(context).pop();
           },
-          icon: new Icon(Icons.arrow_back_ios, color: Colors.black,),
+          icon: new Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black,
+          ),
         ),
         title: new Text(
           "Friends",
@@ -63,7 +66,7 @@ class FriendsState extends State<FriendsPage> with SingleTickerProviderStateMixi
           child: Icon(Icons.person_add),
           backgroundColor: Colors.green,
           onPressed: () {
-            return showDialog(
+            showDialog(
                 context: context,
                 builder: (BuildContext context) {
                   return new AlertDialog(
@@ -84,7 +87,7 @@ class FriendsState extends State<FriendsPage> with SingleTickerProviderStateMixi
                               .then(
                             (ServerResponse response) {
                               if (response.status) {
-                                return showDialog(
+                                showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
                                     return new AlertDialog(
@@ -105,7 +108,7 @@ class FriendsState extends State<FriendsPage> with SingleTickerProviderStateMixi
                                   },
                                 );
                               } else {
-                                return showDialog(
+                                showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
                                     return new AlertDialog(
@@ -125,7 +128,7 @@ class FriendsState extends State<FriendsPage> with SingleTickerProviderStateMixi
                                   },
                                 );
                               }
-                            },
+                            }
                           );
                         },
                       ),

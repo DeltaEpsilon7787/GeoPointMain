@@ -2,29 +2,25 @@ import 'package:flutter/material.dart';
 import 'websocket_client.dart';
 import '../main.dart';
 
-class ValidatePage extends StatefulWidget {
-  @override
-  _ValidatePageState createState() => _ValidatePageState();
-}
+var _validateFormKey = new GlobalKey<FormState>();
 
-class _ValidatePageState extends State<ValidatePage> {
-  String _key;
-
-  final formKey = new GlobalKey<FormState>();
+class ValidatePage extends StatelessWidget {
+  const ValidatePage({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    String _key;
     return Scaffold(
       body: new Container(
         padding: new EdgeInsets.all(20.0),
         child: new Form(
-          key: formKey,
+          key: _validateFormKey,
           child: new SingleChildScrollView(
             child: new Column(
               children: <Widget>[
                 new TextFormField(
                   decoration: new InputDecoration(labelText: "Enter a key"),
-                  onSaved: (String value) => this._key = value,
+                  onSaved: (String value) => _key = value,
                 ),
                 new Padding(padding: EdgeInsets.all(5.0)),
                 new RaisedButton(
@@ -33,14 +29,13 @@ class _ValidatePageState extends State<ValidatePage> {
                     "Confirm",
                   ),
                   onPressed: () {
-                    if (this.formKey.currentState.validate()) {
-                      this.formKey.currentState.save();
+                    if (_validateFormKey.currentState.validate()) {
+                      _validateFormKey.currentState.save();
                       WebsocketClient.of(context)
-                          .attemptActivation(this._key)
+                          .attemptActivation(_key)
                           .then((ServerResponse response) {
                         if (response.status) {
-                          Navigator.of(this.context)
-                              .pushReplacementNamed('/login');
+                          Navigator.of(context)..pop()..pop();
                         } else {
                           showDialog(
                             context: context,

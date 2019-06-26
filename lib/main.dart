@@ -1,19 +1,20 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:geosquad/components/websocket_client.dart';
 import 'package:geosquad/components/login_page.dart';
-import 'package:geosquad/components/register_page.dart';
 import 'package:geosquad/components/map_page.dart';
 import 'package:geosquad/components/profile.dart';
+import 'package:geosquad/components/register_page.dart';
 import 'package:geosquad/components/validate_page.dart';
+import 'package:geosquad/components/websocket_client.dart';
 
-import 'components/friends.dart';
+import 'components/loading_screen.dart';
 
 void main() => runApp(App());
 
 class WebsocketClient extends InheritedWidget {
-  final WebsocketService client = new WebsocketService();
+  final WebsocketService client = WebsocketService();
 
   WebsocketClient({Key key, @required Widget child})
       : super(key: key, child: child);
@@ -25,6 +26,99 @@ class WebsocketClient extends InheritedWidget {
     return (context.inheritFromWidgetOfExactType(WebsocketClient)
             as WebsocketClient)
         .client as WebsocketService;
+  }
+}
+
+class App extends StatelessWidget {
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return new WebsocketClient(
+        child: MaterialApp(
+            title: 'Geopoint Squad',
+            theme: ThemeData(
+              primarySwatch: Colors.blue,
+            ),
+            routes: {
+              '/loading': (context) => new LoadingScreen(),
+              '/auth': (context) => new LoginPage(),
+              '/auth/register': (context) => new RegisterPage(),
+              '/auth/register/validate': (context) => new ValidatePage(),
+              '/map': (context) => new MapPage(),
+              '/map/profile': (context) => new Profile(),
+            },
+            home: FirstPage()));
+  }
+}
+
+enum APP_STATE {
+  INITIAL,
+  FIRST_CONNECTION_FAILED,
+  FIRST_CONNECTION_SUCCESS,
+  AUTO_LOGIN_SUCCESS,
+  AUTO_LOGIN_FAILED
+}
+
+class FirstPage extends StatelessWidget {
+  const FirstPage({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: StreamBuilder(
+            stream: this._preload(context),
+            initialData: APP_STATE.INITIAL,
+            builder: (context, snapshot) {
+              return Builder(builder: (context) {
+                switch (snapshot.data) {
+                  case APP_STATE.FIRST_CONNECTION_FAILED:
+                    return Scaffold(
+                        body: Center(
+                            child: Column(
+                      children: <Widget>[
+                        Text('We were unable to connect to GeoPoint server'),
+                        FlatButton(
+                          child: Text('OK'),
+                          onPressed: () {
+                            exit(0);
+                          },
+                        )
+                      ],
+                    )));
+                  case APP_STATE.FIRST_CONNECTION_SUCCESS:
+                    return Scaffold(
+                        body: Center(child: Text('Trying to log in...')));
+                  case APP_STATE.AUTO_LOGIN_FAILED:
+                    Future.delayed(Duration(seconds: 2)).then((_) =>
+                        Navigator.pushReplacementNamed(context, '/auth'));
+                    return Scaffold(
+                        body: Center(
+                            child: Text(
+                                'We were unable to log in automatically, redirecting to Login page...')));
+                  case APP_STATE.AUTO_LOGIN_SUCCESS:
+                    Navigator.pushReplacementNamed(context, '/map');
+                    break;
+                  default:
+                    return Center(child: CircularProgressIndicator());
+                }
+              });
+            }));
+  }
+
+  Stream<APP_STATE> _preload(BuildContext context) async* {
+    yield* WebsocketClient.of(context)
+        .establishGuestSession()
+        .then((bool status) {
+      return status
+          ? APP_STATE.FIRST_CONNECTION_SUCCESS
+          : APP_STATE.FIRST_CONNECTION_FAILED;
+    }).asStream();
+
+    yield* WebsocketClient.of(context).tryToAuth().then((bool status) {
+      return status
+          ? APP_STATE.AUTO_LOGIN_SUCCESS
+          : APP_STATE.AUTO_LOGIN_FAILED;
+    }).asStream();
   }
 }
 
@@ -42,17 +136,6 @@ class WebsocketBasicServerWhines extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Builder(builder: (context) => this.child);
-  }
-
-  void _processServerBroadcast(ServerResponse broadcast) {
-    switch (broadcast.code) {
-      case 'NEED_AUTH':
-        this._needAuth();
-        break;
-      case 'FRIEND_REQUEST':
-        this._processFriendRequest(broadcast.data);
-        break;
-    }
   }
 
   void _needAuth() {
@@ -96,6 +179,17 @@ class WebsocketBasicServerWhines extends StatelessWidget {
           );
         });
   }
+
+  void _processServerBroadcast(ServerResponse broadcast) {
+    // switch (broadcast.code) {
+    //   case 'NEED_AUTH':
+    //     this._needAuth();
+    //     break;
+    //   case 'FRIEND_REQUEST':
+    //     this._processFriendRequest(broadcast.data);
+    //     break;
+    // }
+  }
 }
 
 class WebsocketFriendChangeListener extends StatefulWidget {
@@ -109,88 +203,9 @@ class WebsocketFriendChangeListener extends StatefulWidget {
       _WebsocketFriendChangeListenerState();
 }
 
-class _WebsocketFriendChangeListenerState
-    extends State<WebsocketFriendChangeListener> {
-  void didChangeDependencies() {
-    WebsocketClient.of(context)
-        .serverBroadcast
-        .stream
-        .listen(_processServerBroadcast);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return WebsocketBasicServerWhines(
-        context: this.widget.context, child: this.widget.child);
-  }
-
-  void _processServerBroadcast(ServerResponse broadcast) {
-    switch (broadcast.code) {
-      case 'FRIEND_LIST_CHANGED':
-        if (this.mounted) setState(() {});
-        break;
-    }
-  }
-}
-
-class App extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return new WebsocketClient(
-        child: MaterialApp(
-            title: 'Geopoint Squad',
-            theme: ThemeData(
-              primarySwatch: Colors.blue,
-            ),
-            initialRoute: '/',
-            routes: {
-          '/': (context) => new Home(),
-          '/login': (context) => new LoginPage(),
-          '/auth': (context) => new RegisterPage(),
-          '/map': (context) => new MapPage(),
-          '/profile': (context) => new Profile(),
-          '/validate': (context) => new ValidatePage(),
-        }));
-  }
-}
-
-enum APP_STATE {
-  INITIAL,
-  FIRST_CONNECTION_FAILED,
-  AUTO_LOGIN_SUCCESS,
-  AUTO_LOGIN_FAILED
-}
-
-class Home extends StatefulWidget {
-  @override
-  _HomeState createState() => _HomeState();
-}
-
-class _HomeState extends State<Home> {
+/*
+class _FirstPageState extends State<FirstPage> {
   APP_STATE _currentState = APP_STATE.INITIAL;
-
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    WebsocketClient.of(context).establishGuestSession().then((bool status) {
-      if (!status) {
-        this._currentState = APP_STATE.FIRST_CONNECTION_FAILED;
-        return null;
-      }
-      return Future.value();
-    }).then((_) {
-      return WebsocketClient.of(context).tryToAuth().then((bool status) {
-        if (status) {
-          this._currentState = APP_STATE.AUTO_LOGIN_SUCCESS;
-        } else {
-          this._currentState = APP_STATE.AUTO_LOGIN_FAILED;
-        }
-        return Future.value();
-      });
-    }).whenComplete(() {
-      setState(() {});
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -213,8 +228,56 @@ class _HomeState extends State<Home> {
         case APP_STATE.AUTO_LOGIN_SUCCESS:
           return new MapPage();
         case APP_STATE.AUTO_LOGIN_FAILED:
-          return new LoginPage();
+          return new LoginPageExperiment(); // LoginPage();
+        default:
+          return CircularProgressIndicator();
       }
     }));
+  }
+
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WebsocketClient.of(context).establishGuestSession().then((bool status) {
+      if (!status) {
+        this._currentState = APP_STATE.FIRST_CONNECTION_FAILED;
+        return null;
+      }
+      return Future.value();
+    }).then((_) {
+      return WebsocketClient.of(context).tryToAuth().then((bool status) {
+        if (status) {
+          this._currentState = APP_STATE.AUTO_LOGIN_SUCCESS;
+        } else {
+          this._currentState = APP_STATE.AUTO_LOGIN_FAILED;
+        }
+        return Future.value();
+      });
+    }).whenComplete(() {
+      setState(() {});
+    });
+  }
+}
+*/
+class _WebsocketFriendChangeListenerState
+    extends State<WebsocketFriendChangeListener> {
+  @override
+  Widget build(BuildContext context) {
+    return WebsocketBasicServerWhines(
+        context: this.widget.context, child: this.widget.child);
+  }
+
+  void didChangeDependencies() {
+    WebsocketClient.of(context)
+        .serverBroadcast
+        .stream
+        .listen(_processServerBroadcast);
+  }
+
+  void _processServerBroadcast(ServerResponse broadcast) {
+    switch (broadcast.code) {
+      case 'FRIEND_LIST_CHANGED':
+        if (this.mounted) setState(() {});
+        break;
+    }
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../main.dart';
 import 'package:geosquad/components/websocket_client.dart';
@@ -82,6 +84,7 @@ class _FriendsRequestState extends State<FriendsRequestPage> {
                                   new IconButton(
                                     icon: new Icon(Icons.block),
                                     iconSize: 32.0,
+                                    onPressed: () {}
                                   ),
                                 ],
                               ),
