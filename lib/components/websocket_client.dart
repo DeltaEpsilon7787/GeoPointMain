@@ -105,8 +105,8 @@ class WebsocketService {
         });
   }
 
-  Future<ServerResponse> getUserInfo(String username) async =>
-      this._sendMessage('get_user_info', data: {'target': username});
+  Future<ServerResponse> getUserInfo({String username, double timeFrame}) async =>
+      this._sendMessage('get_user_info', data: {'target': username ?? this.username, 'time_frame': timeFrame ?? 300});
 
   Future<ServerResponse> getFriendRequests() async =>
       this._sendMessage('get_friend_requests');

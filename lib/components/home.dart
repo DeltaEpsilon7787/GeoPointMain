@@ -5,6 +5,11 @@ class HomePage extends StatelessWidget {
   const HomePage({Key key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
+    final infoFuture = WebsocketClient.of(context)
+        .getUserInfo()
+        .asStream()
+        .asBroadcastStream();
+    
     return new Scaffold(
       appBar: new AppBar(
         leading: new IconButton(
@@ -58,13 +63,19 @@ class HomePage extends StatelessWidget {
             child: new Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                new Text(
-                  '${WebsocketClient.of(context).email}',
-                  style: new TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16.0,
-                  ),
-                ),
+                new StreamBuilder(
+                    stream: infoFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        print(snapshot.data.data);
+                        return new Text(snapshot.data.data['email'].toString(),
+                            style: new TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.0,
+                            ));
+                      }
+                      return new CircularProgressIndicator();
+                    }),
                 new FlatButton(
                   padding: EdgeInsets.all(0),
                   onPressed: () {
@@ -131,7 +142,18 @@ class HomePage extends StatelessWidget {
                 new Text("AVERAGE SPEED",
                     style: new TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16.0)),
-                // Future Builder используй для этих двух контейнеров
+                new StreamBuilder(
+                    stream: infoFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        return new Text(snapshot.data.data['avg_speed'].toString(),
+                            style: new TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.0,
+                            ));
+                      }
+                      return new CircularProgressIndicator();
+                    }),
               ],
             ),
           ),
@@ -143,7 +165,18 @@ class HomePage extends StatelessWidget {
                 new Text("DISTANCE TRAVELED",
                     style: new TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16.0)),
-                // Future Builder используй для этих двух контейнеров
+                new StreamBuilder(
+                    stream: infoFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        return new Text(snapshot.data.data['total_distance'].toString(),
+                            style: new TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.0,
+                            ));
+                      }
+                      return new CircularProgressIndicator();
+                    }),
               ],
             ),
           ),
