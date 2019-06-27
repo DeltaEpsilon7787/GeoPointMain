@@ -215,7 +215,7 @@ class _MapPageStateNew extends State<MapPage> {
     double lerp = 10 - (WebsocketClient.of(context).ourTime - time) / 15;
 
     final color = Color.fromRGBO(digest[0], digest[1], digest[2], 1.0);
-    if (lerp <= 10) {
+    if (lerp > 0) {
       return CircleMarkerDatum(
           marker:
               CircleMarker(color: color, point: LatLng(lat, lon), radius: lerp),
