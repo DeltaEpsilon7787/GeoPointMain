@@ -52,19 +52,26 @@ class WebsocketService {
   final StreamController<ServerResponse> _responder =
       StreamController.broadcast();
 
-  Duration serverTimeOffset = Duration.zero;
+  double _serverTimeOffset;
+
+  double get serverTimeOffset {
+    this._serverTimeOffset ??
+        this
+            ._sendMessage('get_time', authorized: false)
+            .then((ServerResponse response) {
+          this._serverTimeOffset = response.data as double;
+          print(response.data);
+        });
+    return this._serverTimeOffset ?? 0;
+  }
 
   final Stopwatch timer = Stopwatch()..start();
 
   String username;
 
   String email;
-  WebsocketService() {
-    this._establishServerOffset();
-  }
 
-  double get ourTime =>
-      (this.timer.elapsed + this.serverTimeOffset).inMicroseconds / 10e6;
+  double get ourTime => this.serverTimeOffset + this.timer.elapsed.inMicroseconds / 10e6;
 
   Future<ServerResponse> attemptActivation(String key) async =>
       this._sendMessage('activate', data: {'key': key}, authorized: false);
@@ -154,12 +161,6 @@ class WebsocketService {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('username', null);
     await prefs.setString('password', null);
-  }
-
-  void _establishServerOffset() async {
-    await this._sendMessage('get_time', authorized: false).then(
-        (ServerResponse response) => this.serverTimeOffset =
-            Duration(microseconds: (10e6 * response.data) as int));
   }
 
   void _processResponse(dynamic stringData) {

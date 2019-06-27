@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import './notifiers.dart';
 import 'package:geosquad/components/websocket_client.dart';
 
-final friendUpdateNotifier = StreamController<void>();
-
 class FriendListRow extends StatelessWidget {
   final String friendName;
   const FriendListRow({Key key, this.friendName}) : super(key: key);
@@ -47,7 +45,6 @@ class FriendListRow extends StatelessWidget {
                               onPressed: () {
                                 WebsocketClient.of(context)
                                     .deleteFriend(friendName);
-                                friendUpdateNotifier.add(null);
                                 Navigator.of(context).pop();
                               },
                             ),
@@ -79,12 +76,6 @@ class FriendsListPage extends StatefulWidget {
 }
 
 class _FriendsListPageState extends State<FriendsListPage> {
-  void initState() {
-    super.initState();
-
-    friendUpdateNotifier.stream.listen((_) => setState(() {}));
-  }
-
   Future<List> _listFriends(BuildContext context) async {
     return WebsocketClient.of(context)
         .getMyFriends()
@@ -95,39 +86,42 @@ class _FriendsListPageState extends State<FriendsListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return FriendNotifierWrapper(
-        context: context,
-        child: SingleChildScrollView(
-          child: FutureBuilder<List>(
-              future: _listFriends(context),
-              builder: (context, snapshot) {
-                switch (snapshot.connectionState) {
-                  case ConnectionState.waiting:
-                    return new Container(
-                      child: new Center(
-                        child: new Text("LOADING..."),
-                      ),
-                    );
+    return SingleChildScrollView(
+        child: StreamBuilder(
+      stream: WebsocketClient.of(context)
+          .serverBroadcast
+          .stream
+          .where((response) => response.code == 'FRIEND_LIST_CHANGED'),
+      builder: (context, snapshot) => FutureBuilder<List>(
+          future: _listFriends(context),
+          builder: (context, snapshot) {
+            switch (snapshot.connectionState) {
+              case ConnectionState.waiting:
+                return new Container(
+                  child: new Center(
+                    child: new Text("LOADING..."),
+                  ),
+                );
 
-                  case ConnectionState.done:
-                    if (snapshot.hasError) {
-                      return new Container(
-                        child: new Center(
-                          child: new Text("ERROR"),
-                        ),
-                      );
-                    }
-                    return new Container(
-                      child: new ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: snapshot.data.length,
-                          itemBuilder: (context, index) =>
-                              FriendListRow(friendName: snapshot.data[index])),
-                    );
-                  default:
-                    return null;
+              case ConnectionState.done:
+                if (snapshot.hasError) {
+                  return new Container(
+                    child: new Center(
+                      child: new Text("ERROR"),
+                    ),
+                  );
                 }
-              }),
-        ));
+                return new Container(
+                  child: new ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: snapshot.data.length,
+                      itemBuilder: (context, index) =>
+                          FriendListRow(friendName: snapshot.data[index])),
+                );
+              default:
+                return null;
+            }
+          }),
+    ));
   }
 }

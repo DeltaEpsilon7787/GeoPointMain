@@ -20,9 +20,7 @@ List<Widget> _widgetList = <Widget>[
 class _Profile extends State<Profile> {
   @override
   Widget build(BuildContext context) {
-    return new ServerNotifier(
-        context: context,
-        child: Scaffold(
+    return new Scaffold(
           body: _widgetList.elementAt(_selectedIndex),
           bottomNavigationBar: new BottomNavigationBar(
               items: const <BottomNavigationBarItem>[
@@ -69,6 +67,6 @@ class _Profile extends State<Profile> {
                   _selectedIndex = index;
                 });
               }),
-        ));
+        );
   }
 }

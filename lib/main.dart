@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:geosquad/components/notifiers.dart';
 import 'package:geosquad/components/login_page.dart';
 import 'package:geosquad/components/map_page.dart';
 import 'package:geosquad/components/profile.dart';
@@ -53,41 +54,39 @@ class FirstPage extends StatelessWidget {
             stream: this._preload(context),
             initialData: APP_STATE.INITIAL,
             builder: (context, snapshot) {
-              return Builder(builder: (context) {
-                switch (snapshot.data) {
-                  case APP_STATE.FIRST_CONNECTION_FAILED:
-                    return Scaffold(
-                        body: Center(
-                            child: Column(
-                      children: <Widget>[
-                        Text('We were unable to connect to GeoPoint server'),
-                        FlatButton(
-                          child: Text('OK'),
-                          onPressed: () {
-                            exit(0);
-                          },
-                        )
-                      ],
-                    )));
-                  case APP_STATE.FIRST_CONNECTION_SUCCESS:
-                    return Scaffold(
-                        body: Center(child: Text('Trying to log in...')));
-                  case APP_STATE.AUTO_LOGIN_FAILED:
-                    Future.delayed(Duration(seconds: 2)).then((_) =>
-                        Navigator.pushReplacementNamed(context, '/auth'));
-                    return Scaffold(
-                        body: Center(
-                            child: Text(
-                                'We were unable to log in automatically, redirecting to Login page...')));
-                  case APP_STATE.AUTO_LOGIN_SUCCESS:
-                    Future.delayed(Duration(seconds: 0)).then(
-                        (_) => Navigator.pushReplacementNamed(context, '/map'));
-                    break;
-                  default:
-                    return Center(child: CircularProgressIndicator());
-                }
-                return Center(child: CircularProgressIndicator());
-              });
+              switch (snapshot.data) {
+                case APP_STATE.FIRST_CONNECTION_FAILED:
+                  return Scaffold(
+                      body: Center(
+                          child: Column(
+                    children: <Widget>[
+                      Text('We were unable to connect to GeoPoint server'),
+                      FlatButton(
+                        child: Text('OK'),
+                        onPressed: () {
+                          exit(0);
+                        },
+                      )
+                    ],
+                  )));
+                case APP_STATE.FIRST_CONNECTION_SUCCESS:
+                  return Scaffold(
+                      body: Center(child: Text('Trying to log in...')));
+                case APP_STATE.AUTO_LOGIN_FAILED:
+                  Future.delayed(Duration(seconds: 2)).then(
+                      (_) => Navigator.pushReplacementNamed(context, '/auth'));
+                  return Scaffold(
+                      body: Center(
+                          child: Text(
+                              'We were unable to log in automatically, redirecting to Login page...')));
+                case APP_STATE.AUTO_LOGIN_SUCCESS:
+                  Future.delayed(Duration(seconds: 0)).then(
+                      (_) => Navigator.pushReplacementNamed(context, '/map'));
+                  break;
+                default:
+                  return Center(child: CircularProgressIndicator());
+              }
+              return Center(child: CircularProgressIndicator());
             }));
   }
 

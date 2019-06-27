@@ -53,13 +53,14 @@ class FriendsPage extends StatelessWidget {
   }
 }
 
+final _friendRequestKey = GlobalKey<FormState>();
+
 class AddFriendButton extends StatelessWidget {
   const AddFriendButton({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     String friendLogin;
-
     return FloatingActionButton(
         child: Icon(Icons.person_add),
         backgroundColor: Colors.green,
@@ -70,16 +71,18 @@ class AddFriendButton extends StatelessWidget {
                 return new AlertDialog(
                   title: new Text("Add to friends",
                       style: new TextStyle(fontWeight: FontWeight.bold)),
-                  content: new TextFormField(
-                    decoration:
-                        new InputDecoration(labelText: "Enter friend\'s login"),
-                    onFieldSubmitted: (String value) => friendLogin = value,
-                  ),
+                  content: new Form(
+                      key: _friendRequestKey,
+                      child: new TextFormField(
+                          decoration: new InputDecoration(
+                              labelText: "Enter friend\'s login"),
+                          onSaved: (String value) => friendLogin = value)),
                   actions: <Widget>[
                     new FlatButton(
                       child: new Text('Add'),
                       onPressed: () {
                         Navigator.of(context).pop();
+                        _friendRequestKey.currentState.save();
                         WebsocketClient.of(context)
                             .sendFriendsRequest(friendLogin)
                             .then((ServerResponse response) {

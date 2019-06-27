@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../main.dart';
 import 'package:geosquad/components/websocket_client.dart';
 
 class FriendRequest extends StatelessWidget {
@@ -24,12 +23,16 @@ class FriendRequest extends StatelessWidget {
               new IconButton(
                 icon: new Icon(Icons.check),
                 iconSize: 32.0,
-                onPressed: () {},
+                onPressed: () {
+                  WebsocketClient.of(context).acceptFriendRequest(this.friendName);
+                },
               ),
               new IconButton(
                   icon: new Icon(Icons.block),
                   iconSize: 32.0,
-                  onPressed: () {}),
+                  onPressed: () {
+                    WebsocketClient.of(context).declineFriendRequest(this.friendName);
+                  }),
             ],
           ),
         ],
@@ -49,7 +52,6 @@ class _FriendsRequestState extends State<FriendsRequestPage> {
         .getFriendRequests()
         .then((ServerResponse response) {
       try {
-        print(response.data.length);
         return response.data as List;
       } catch (Exception) {
         return [];
@@ -59,51 +61,44 @@ class _FriendsRequestState extends State<FriendsRequestPage> {
 
   @override
   Widget build(BuildContext context) {
-    return new SingleChildScrollView(
-      child: FutureBuilder<List>(
-          future: _listRequest(),
-          builder: (context, snapshot) {
-            switch (snapshot.connectionState) {
-              case ConnectionState.waiting:
-                return new Container(
-                  child: new Center(
-                    child: new Text("LOADING..."),
-                  ),
-                );
+    return new StreamBuilder(
+        stream: WebsocketClient.of(context).serverBroadcast.stream.where(
+            (response) => ['FRIEND_REQUEST_LIST_CHANGED', 'FRIEND_REQUEST'].contains(response.code)),
+        builder: (context, snapshot) => SingleChildScrollView(
+              child: FutureBuilder<List>(
+                  future: _listRequest(),
+                  builder: (context, snapshot) {
+                    switch (snapshot.connectionState) {
+                      case ConnectionState.waiting:
+                        return new Container(
+                          child: new Center(
+                            child: new Text("LOADING..."),
+                          ),
+                        );
 
-              case ConnectionState.active:
-                return new Container(
-                  child: new Center(
-                    child: new Text("ACTIVE"),
-                  ),
-                );
+                      case ConnectionState.done:
+                        if (snapshot.hasError) {
+                          return new Container(
+                            child: new Center(
+                              child: new Text("ERROR"),
+                            ),
+                          );
+                        } else {
+                          return new Container(
+                            child: new ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: snapshot.data.length,
+                              itemBuilder: (context, index) => FriendRequest(
+                                  friendName: snapshot.data[index]),
+                            ),
+                          );
+                        }
+                        break;
 
-              case ConnectionState.none:
-                return new Container(
-                  child: new Center(
-                    child: new Text("NONE"),
-                  ),
-                );
-
-              case ConnectionState.done:
-                if (snapshot.hasError) {
-                  return new Container(
-                    child: new Center(
-                      child: new Text("ERROR"),
-                    ),
-                  );
-                } else {
-                  return new Container(
-                    child: new ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: snapshot.data.length,
-                      itemBuilder: (context, index) =>
-                          FriendRequest(friendName: snapshot.data[index]),
-                    ),
-                  );
-                }
-            }
-          }),
-    );
+                      default:
+                        return new CircularProgressIndicator();
+                    }
+                  }),
+            ));
   }
 }
